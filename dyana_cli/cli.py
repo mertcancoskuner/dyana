@@ -1,0 +1,236 @@
+import pathlib
+import platform
+
+# NOTE: json is too slow
+import cysimdjson
+import typer
+from rich import print
+
+from dyana_cli.loaders.loader import Loader
+from dyana_cli.tracer.tracee import Tracer
+
+cli = typer.Typer(
+    no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
+    help="Blackbox model profiler.",
+)
+
+
+@cli.command(help="Profile a model.")
+def trace(
+    model: pathlib.Path = typer.Option(help="Path to the model to profile."),
+    loader: str = typer.Option(help="Loader to use.", default="automodel"),
+    input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
+    events: list[str] = typer.Option(help="Events to trace.", default=Tracer.DEFAULT_EVENTS),
+    output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
+    no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
+) -> None:
+    # disable GPU on non-Linux systems
+    if not no_gpu and platform.system() != "Linux":
+        no_gpu = True
+
+    allow_network = False
+    allow_gpus = not no_gpu
+
+    # TODO: for now we only have "auto", figure out more specific loaders
+    loader = Loader(loader)
+    tracer = Tracer(loader, events=events)
+
+    trace = tracer.run_trace(model, input, allow_network, allow_gpus)
+
+    if trace.errors:
+        print(":exclamation: [bold red]errors:[/bold red]")
+        for group, errors in trace.errors.items():
+            for error in errors:
+                print(f"  [b]{group}[/]: {error}")
+        print()
+
+    print(f":card_file_box:  saving {len(trace.events)} events to {output}\n")
+
+    with open(output, "w") as f:
+        f.write(trace.model_dump_json())
+
+    summary(output)
+
+
+# https://stackoverflow.com/questions/1094841/get-a-human-readable-version-of-a-file-size
+def sizeof_fmt(num, suffix="B"):
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
+
+
+def delta_fmt(before: int, after: int) -> str:
+    delta = after - before
+    fmt = sizeof_fmt(after)
+    if delta > 0:
+        delta_fmt = sizeof_fmt(delta)
+        fmt += f" :red_triangle_pointed_up: [red]{delta_fmt}[/]"
+    return fmt
+
+
+@cli.command(help="Show a summary of the trace.")
+def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", default="trace.json")) -> None:
+    with open(trace) as f:
+        raw = f.read()
+        # the standard json parser is too slow for this
+        parser = cysimdjson.JSONParser()
+        trace = parser.loads(raw)
+
+    print()
+
+    print(f"Model path  : [yellow]{trace['model_path']}[/]")
+    print(f"Model input : [dim]{trace['model_input']}[/]")
+    print(f"Started at  : {trace['started_at']}")
+    print(f"Ended at    : {trace['ended_at']}")
+    print(f"Total Events: {len(trace['events'])}")
+
+    print()
+
+    if trace["errors"]:
+        print("[bold red]Errors:[/bold red]\n")
+        for group, errors in trace["errors"].items():
+            for error in errors:
+                print(f"  * [b]{group}[/]: {error}")
+        print()
+
+    ram = trace["ram"]
+
+    # TODO: make this prettier, do not print delta if 0
+    print("[bold yellow]RAM:[/]")
+    print(f"  * start            : {sizeof_fmt(ram['start'])}")
+    print(f"  * tokenizer loaded : {delta_fmt(ram['start'], ram['after_tokenizer_loaded'])}")
+    print(f"  * tokenization     : {delta_fmt(ram['after_tokenizer_loaded'], ram['after_tokenization'])}")
+    print(f"  * model loaded     : {delta_fmt(ram['after_tokenization'], ram['after_model_loaded'])}")
+    print(f"  * model inference  : {delta_fmt(ram['after_model_loaded'], ram['after_model_inference'])}")
+    print()
+
+    if trace["gpu"]:
+        num_gpus = len(trace["gpu"]["start"])
+        if num_gpus:
+            print("[bold green]GPU:[/]")
+
+            for i in range(num_gpus):
+                dev_name = trace["gpu"]["start"][i]["device_name"]
+                dev_total = trace["gpu"]["start"][i]["total_memory"]
+                dev_free = trace["gpu"]["start"][i]["free_memory"]
+                at_start = dev_total - dev_free
+
+                try:
+                    after_tokenizer_loaded = (
+                        trace["gpu"]["after_tokenizer_loaded"][i]["total_memory"]
+                        - trace["gpu"]["after_tokenizer_loaded"][i]["free_memory"]
+                    )
+                except IndexError:
+                    after_tokenizer_loaded = 0
+
+                try:
+                    after_tokenization = (
+                        trace["gpu"]["after_tokenization"][i]["total_memory"]
+                        - trace["gpu"]["after_tokenization"][i]["free_memory"]
+                    )
+                except IndexError:
+                    after_tokenization = 0
+
+                try:
+                    after_model_loaded = (
+                        trace["gpu"]["after_model_loaded"][i]["total_memory"]
+                        - trace["gpu"]["after_model_loaded"][i]["free_memory"]
+                    )
+                except IndexError:
+                    after_model_loaded = 0
+
+                try:
+                    after_model_inference = (
+                        trace["gpu"]["after_model_inference"][i]["total_memory"]
+                        - trace["gpu"]["after_model_inference"][i]["free_memory"]
+                    )
+                except IndexError:
+                    after_model_inference = 0
+
+                # skip this GPU if it was not influenced by the trace
+                if (
+                    len(
+                        {
+                            at_start,
+                            after_tokenizer_loaded,
+                            after_tokenization,
+                            after_model_loaded,
+                            after_model_inference,
+                        }
+                    )
+                    > 1
+                ):
+                    print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
+                    print(f"    * start           : {sizeof_fmt(at_start)}")
+                    print(f"    * tokenizer loaded: {delta_fmt(at_start, after_tokenizer_loaded)}")
+                    print(f"    * tokenization    : {delta_fmt(after_tokenizer_loaded, after_tokenization)}")
+                    print(f"    * model loaded    : {delta_fmt(after_tokenization, after_model_loaded)}")
+                    print(f"    * model inference : {delta_fmt(after_model_loaded, after_model_inference)}")
+                    print()
+
+    proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
+    if proc_execs:
+        print("[bold yellow]Process Executions:[/]")
+        for proc_exec in proc_execs:
+            cmd_path = [arg["value"] for arg in proc_exec["args"] if arg["name"] == "cmdpath"][0]
+            cmd_argv = [[v for v in arg["value"]] for arg in proc_exec["args"] if arg["name"] == "argv"][0]
+            print(f"  * {proc_exec['processName']} -> [bold red]{proc_exec['syscall']}[/] {cmd_path} {cmd_argv}")
+        print()
+
+    connects = [event for event in trace["events"] if event["eventName"] == "security_socket_connect"]
+    if connects:
+        print("[bold yellow]Network:[/]")
+        for connect in connects:
+            remote_addr = [arg["value"] for arg in connect["args"] if arg["name"] == "remote_addr"][0]
+            remote_addr_family = remote_addr["sa_family"]
+            remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
+
+            print(
+                f"  * {connect['processName']} -> [bold red]{connect['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
+            )
+        print()
+
+    opens = [event for event in trace["events"] if event["eventName"] == "security_file_open"]
+    unique_files = set()
+    any_file = False
+    any_special = False
+    special_paths: dict[str, int] = {
+        "/usr/local/lib/": 0,
+        "/usr/lib/": 0,
+        "/lib/": 0,
+        "/dev/": 0,
+        "/proc/": 0,
+        "/sys/": 0,
+        "/etc/": 0,
+    }
+
+    for file in opens:
+        file_path = [arg["value"] for arg in file["args"] if arg["name"] == "syscall_pathname"][0]
+        is_special_path = False
+        any_file = True
+
+        for special_path in special_paths:
+            if special_path in file_path:
+                special_paths[special_path] += 1
+                is_special_path = True
+                any_special = True
+                break
+
+        if not is_special_path:
+            unique_files.add(file_path)
+
+    if any_file:
+        print("[bold yellow]File Accesses:[/]")
+        for file_path in sorted(unique_files):
+            print(f"  * {file_path}")
+
+        if any_special:
+            print()
+            for path, count in special_paths.items():
+                if count > 0:
+                    print(f"  * {count} accesses to {path}[dim]*[/]")
+
+        print()
