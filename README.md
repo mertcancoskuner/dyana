@@ -1,4 +1,4 @@
-Dyana is a sandbox environment designed for loading and running machine learning models, offering comprehensive tracing of runtime activities such as detailed memory usage (including both host and GPU), filesystem interactions, network requests, and more.
+Dyana is a sandbox environment designed for loading and running machine learning models, offering comprehensive tracing of runtime activities such as detailed GPU memory usage, filesystem interactions, network requests, and more.
 
 Models are loaded within a containerized environment, followed by an inference execution. The runtime tracing is highly lightweight, utilizing eBPF to provide in-depth monitoring and analysis.
 
@@ -12,7 +12,7 @@ Dyana is designed to work with models that are compatible with [AutoModel and Au
 
 * Docker
 * [Poetry](https://python-poetry.org/)
-* Optional: a GNU/Linux machine with CUDA for GPU tracing support.
+* Optional: a GNU/Linux machine with CUDA for GPU memory tracing support.
 
 ## Usage
 
