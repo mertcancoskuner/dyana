@@ -1,6 +1,4 @@
-Dyana is a sandbox environment designed for loading and running machine learning models, offering comprehensive tracing of runtime activities such as detailed GPU memory usage, filesystem interactions, network requests, and more.
-
-Models are loaded within a containerized environment, followed by an inference execution. The runtime tracing is highly lightweight, utilizing eBPF to provide in-depth monitoring and analysis.
+Dyana is a sandbox environment crafted for monitoring and analyzing machine learning model runtime activities. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and more during model loading and inference.
 
 <img alt="trace" src="https://github.com/dreadnode/dyana/blob/main/trace.png?raw=true"/>
 
