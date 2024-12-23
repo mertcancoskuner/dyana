@@ -84,12 +84,35 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     print()
 
-    print(f"Platform    : [magenta]{trace['platform']}[/]")
-    print(f"Model path  : [yellow]{trace['model_path']}[/]")
-    print(f"Model input : [dim]{trace['model_input']}[/]")
-    print(f"Started at  : {trace['started_at']}")
-    print(f"Ended at    : {trace['ended_at']}")
-    print(f"Total Events: {len(trace['events'])}")
+    ram = trace["ram"]
+
+    tot_mem_pressure = max(
+        ram["start"],
+        ram["after_tokenizer_loaded"],
+        ram["after_tokenization"],
+        ram["after_model_loaded"],
+        ram["after_model_inference"],
+    )
+
+    tot_gpu_pressure: int = 0
+    if trace["gpu"]:
+        num_gpus = len(trace["gpu"]["start"])
+        for i in range(num_gpus):
+            usage = (
+                trace["gpu"]["after_model_inference"][i]["total_memory"]
+                - trace["gpu"]["after_model_inference"][i]["free_memory"]
+            )
+            tot_gpu_pressure += usage
+
+    print(f"Platform       : [magenta]{trace['platform']}[/]")
+    print(f"Model path     : [yellow]{trace['model_path']}[/]")
+    print(f"Model input    : [dim]{trace['model_input']}[/]")
+    print(f"Started at     : {trace['started_at']}")
+    print(f"Ended at       : {trace['ended_at']}")
+    print(f"RAM usage      : [yellow][bold]{sizeof_fmt(tot_mem_pressure)}[/]")
+    if tot_gpu_pressure:
+        print(f"GPU vRAM usage : [green][bold]{sizeof_fmt(tot_gpu_pressure)}[/]")
+    print(f"Total Events   : {len(trace['events'])}")
 
     print()
 
@@ -100,8 +123,6 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
                 print(f"  * [b]{group}[/]: {error}")
         print()
 
-    ram = trace["ram"]
-
     print("[bold yellow]RAM:[/]")
     print(f"  * start            : {sizeof_fmt(ram['start'])}")
     print(f"  * tokenizer loaded : {delta_fmt(ram['start'], ram['after_tokenizer_loaded'])}")
@@ -110,69 +131,67 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
     print(f"  * model inference  : {delta_fmt(ram['after_model_loaded'], ram['after_model_inference'])}")
     print()
 
-    if trace["gpu"]:
-        num_gpus = len(trace["gpu"]["start"])
-        if num_gpus:
-            print("[bold green]GPU:[/]")
+    if trace["gpu"] and num_gpus:
+        print("[bold green]GPU:[/]")
 
-            for i in range(num_gpus):
-                dev_name = trace["gpu"]["start"][i]["device_name"]
-                dev_total = trace["gpu"]["start"][i]["total_memory"]
-                dev_free = trace["gpu"]["start"][i]["free_memory"]
-                at_start = dev_total - dev_free
+        for i in range(num_gpus):
+            dev_name = trace["gpu"]["start"][i]["device_name"]
+            dev_total = trace["gpu"]["start"][i]["total_memory"]
+            dev_free = trace["gpu"]["start"][i]["free_memory"]
+            at_start = dev_total - dev_free
 
-                try:
-                    after_tokenizer_loaded = (
-                        trace["gpu"]["after_tokenizer_loaded"][i]["total_memory"]
-                        - trace["gpu"]["after_tokenizer_loaded"][i]["free_memory"]
-                    )
-                except IndexError:
-                    after_tokenizer_loaded = 0
+            try:
+                after_tokenizer_loaded = (
+                    trace["gpu"]["after_tokenizer_loaded"][i]["total_memory"]
+                    - trace["gpu"]["after_tokenizer_loaded"][i]["free_memory"]
+                )
+            except IndexError:
+                after_tokenizer_loaded = 0
 
-                try:
-                    after_tokenization = (
-                        trace["gpu"]["after_tokenization"][i]["total_memory"]
-                        - trace["gpu"]["after_tokenization"][i]["free_memory"]
-                    )
-                except IndexError:
-                    after_tokenization = 0
+            try:
+                after_tokenization = (
+                    trace["gpu"]["after_tokenization"][i]["total_memory"]
+                    - trace["gpu"]["after_tokenization"][i]["free_memory"]
+                )
+            except IndexError:
+                after_tokenization = 0
 
-                try:
-                    after_model_loaded = (
-                        trace["gpu"]["after_model_loaded"][i]["total_memory"]
-                        - trace["gpu"]["after_model_loaded"][i]["free_memory"]
-                    )
-                except IndexError:
-                    after_model_loaded = 0
+            try:
+                after_model_loaded = (
+                    trace["gpu"]["after_model_loaded"][i]["total_memory"]
+                    - trace["gpu"]["after_model_loaded"][i]["free_memory"]
+                )
+            except IndexError:
+                after_model_loaded = 0
 
-                try:
-                    after_model_inference = (
-                        trace["gpu"]["after_model_inference"][i]["total_memory"]
-                        - trace["gpu"]["after_model_inference"][i]["free_memory"]
-                    )
-                except IndexError:
-                    after_model_inference = 0
+            try:
+                after_model_inference = (
+                    trace["gpu"]["after_model_inference"][i]["total_memory"]
+                    - trace["gpu"]["after_model_inference"][i]["free_memory"]
+                )
+            except IndexError:
+                after_model_inference = 0
 
-                # skip this GPU if it was not influenced by the trace
-                if (
-                    len(
-                        {
-                            at_start,
-                            after_tokenizer_loaded,
-                            after_tokenization,
-                            after_model_loaded,
-                            after_model_inference,
-                        }
-                    )
-                    > 1
-                ):
-                    print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
-                    print(f"    * start           : {sizeof_fmt(at_start)}")
-                    print(f"    * tokenizer loaded: {delta_fmt(at_start, after_tokenizer_loaded)}")
-                    print(f"    * tokenization    : {delta_fmt(after_tokenizer_loaded, after_tokenization)}")
-                    print(f"    * model loaded    : {delta_fmt(after_tokenization, after_model_loaded)}")
-                    print(f"    * model inference : {delta_fmt(after_model_loaded, after_model_inference)}")
-                    print()
+            # skip this GPU if it was not influenced by the trace
+            if (
+                len(
+                    {
+                        at_start,
+                        after_tokenizer_loaded,
+                        after_tokenization,
+                        after_model_loaded,
+                        after_model_inference,
+                    }
+                )
+                > 1
+            ):
+                print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
+                print(f"    * start           : {sizeof_fmt(at_start)}")
+                print(f"    * tokenizer loaded: {delta_fmt(at_start, after_tokenizer_loaded)}")
+                print(f"    * tokenization    : {delta_fmt(after_tokenizer_loaded, after_tokenization)}")
+                print(f"    * model loaded    : {delta_fmt(after_tokenization, after_model_loaded)}")
+                print(f"    * model inference : {delta_fmt(after_model_loaded, after_model_inference)}")
+                print()
 
     proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
     if proc_execs:
@@ -212,6 +231,9 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     for file in opens:
         file_path = [arg["value"] for arg in file["args"] if arg["name"] == "syscall_pathname"][0]
+        if not file_path:
+            file_path = [arg["value"] for arg in file["args"] if arg["name"] == "pathname"][0]
+
         is_special_path = False
         any_file = True
 
