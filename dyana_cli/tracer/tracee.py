@@ -45,6 +45,9 @@ class Tracer:
             # TODO: find a more specific way to trace from the new container
             "--scope",
             "container=new",
+            # enable debug logging to know when tracee is ready
+            "--log",
+            "debug",
         ]
         for event in events:
             self.args.append("--events")
@@ -52,6 +55,7 @@ class Tracer:
 
         self.reader_thread: threading.Thread | None = None
         self.container: docker.models.containers.Container | None = None
+        self.ready = False
 
     def _reader_thread(self):
         # attach to the container's logs with stream=True to get a generator
@@ -84,6 +88,13 @@ class Tracer:
 
         # TODO: use faster json parser
         message = json.loads(line)
+
+        if "L" in message:
+            # these are debug messages
+            if "is ready callback" in line:
+                self.ready = True
+            return
+
         if "level" in message:
             if message["level"] in ["fatal", "error"]:
                 err = message["error"].strip()
@@ -114,9 +125,8 @@ class Tracer:
         self.reader_thread.daemon = True
         self.reader_thread.start()
 
-        # TODO: tracee takes a few seconds to warm up and trace events, is there a better way to wait for it?
-        print(":eye_in_speech_bubble:  [bold]tracer[/]: warming up ...")
-        for _ in range(10, 0, -1):
+        # tracee takes a few seconds to warm up and trace events
+        while not self.ready:
             time.sleep(1)
 
     def _stop(self) -> None:
