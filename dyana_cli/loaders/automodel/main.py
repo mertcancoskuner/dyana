@@ -51,17 +51,14 @@ if __name__ == "__main__":
 
     ram: dict[str, int] = {"start": get_peak_rss()}
     gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()}
-
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(path)
         ram["after_tokenizer_loaded"] = get_peak_rss()
         gpu["after_tokenizer_loaded"] = get_gpu_usage()
-        inputs = tokenizer(args.sentence, return_tensors="pt")
+        inputs = tokenizer(args.sentence, return_tensors="pt").to(device)
         ram["after_tokenization"] = get_peak_rss()
-
-        inputs.to(device)
         gpu["after_tokenization"] = get_gpu_usage()
     except Exception as e:
         errors["tokenizer"] = str(e)
@@ -70,10 +67,8 @@ if __name__ == "__main__":
         if inputs is None:
             raise ValueError("tokenization failed")
 
-        model = AutoModel.from_pretrained(path)
+        model = AutoModel.from_pretrained(path).to(device)
         ram["after_model_loaded"] = get_peak_rss()
-
-        model.to(device)
         gpu["after_model_loaded"] = get_gpu_usage()
 
         # no need to compute gradients
