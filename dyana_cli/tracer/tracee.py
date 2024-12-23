@@ -82,20 +82,15 @@ class Tracer:
             print(f"[dim]{line}[/]")
             return
 
-        # TODO: investigate possible KConfig fix for messages:
-        #  KConfig: could not check enabled kconfig features
-        #  KConfig: assuming kconfig values, might have unexpected behavior
-
-        # TODO: use faster json parser
         message = json.loads(line)
 
-        if "L" in message:
-            # these are debug messages
+        if "L" in message and message["L"] == "DEBUG":
+            # these are debug messages, do not collect them
             if "is ready callback" in line:
                 self.ready = True
-            return
 
-        if "level" in message:
+        elif "level" in message:
+            # other messages
             if message["level"] in ["fatal", "error"]:
                 err = message["error"].strip()
                 print(f":exclamation: [bold red]tracer error:[/]: {err}")
@@ -104,6 +99,7 @@ class Tracer:
                 msg = message["msg"].strip()
                 print(f":eye_in_speech_bubble:  [bold]tracer[/]: {msg}")
         else:
+            # actual events
             self.trace.append(message)
 
     def _start(self) -> None:
