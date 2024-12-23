@@ -84,10 +84,14 @@ class Tracer:
 
         message = json.loads(line)
 
-        if "L" in message and message["L"] == "DEBUG":
-            # these are debug messages, do not collect them
-            if "is ready callback" in line:
-                self.ready = True
+        if "L" in message:
+            if message["L"] == "DEBUG":
+                # these are debug messages, do not collect them
+                if "is ready callback" in line:
+                    self.ready = True
+            else:
+                # other messages
+                print(f":eye_in_speech_bubble:  [bold]tracer[/]: {message['M'].strip()}")
 
         elif "level" in message:
             # other messages
