@@ -1,6 +1,6 @@
 Dyana is a sandbox environment crafted for monitoring and analyzing machine learning model runtime activities. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and more during model loading and inference.
 
-<img alt="trace" src="https://github.com/dreadnode/dyana/blob/main/trace.png?raw=true"/>
+<img alt="trace" src="https://github.com/dreadnode/dyana/blob/main/example-traces/llama-3.2-1b-linux.png?raw=true"/>
 
 ### Model Compatibility
 
