@@ -3,6 +3,7 @@ import pathlib
 import shutil
 import subprocess
 import threading
+import platform
 import time
 from datetime import datetime
 from typing import Callable
@@ -55,6 +56,7 @@ class AsyncProcessRunner:
 class Trace(BaseModel):
     started_at: datetime
     ended_at: datetime
+    platform: str
     model_path: str
     model_input: str
     errors: dict[str, list[str]] | None = None
@@ -179,6 +181,7 @@ class Tracer:
             errors["tracer"] = self.errors
 
         return Trace(
+            platform=platform.platform(),
             model_path=str(model_path.resolve().absolute()),
             started_at=started_at,
             ended_at=ended_at,
