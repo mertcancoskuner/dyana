@@ -109,8 +109,11 @@ class Tracer:
                 if char == "\n":
                     self._on_tracer_event(line)
                     line = ""
-            # refresh container status
-            self.container.reload()
+            try:
+                # refresh container status
+                self.container.reload()
+            except:
+                self.container.status = "deleted"
 
     def _on_tracer_event(self, line: str) -> None:
         line = line.strip()
@@ -148,6 +151,10 @@ class Tracer:
     def _start(self) -> None:
         self.errors.clear()
         self.trace.clear()
+
+        # TODO: investigate these errors:
+        # 👁️‍🗨️  tracer: KConfig: could not check enabled kconfig features
+        # 👁️‍🗨️  tracer: KConfig: assuming kconfig values, might have unexpected behavior
 
         # start tracee in a detached container
         self.container = docker.run_privileged_detached(
