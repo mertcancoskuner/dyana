@@ -54,7 +54,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     try:
-        tokenizer = AutoTokenizer.from_pretrained(path)
+        tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         ram["after_tokenizer_loaded"] = get_peak_rss()
         gpu["after_tokenizer_loaded"] = get_gpu_usage()
         inputs = tokenizer(args.sentence, return_tensors="pt").to(device)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         if inputs is None:
             raise ValueError("tokenization failed")
 
-        model = AutoModel.from_pretrained(path).to(device)
+        model = AutoModel.from_pretrained(path, trust_remote_code=True).to(device)
         ram["after_model_loaded"] = get_peak_rss()
         gpu["after_model_loaded"] = get_gpu_usage()
 
