@@ -101,3 +101,39 @@ def run(
         else None,
     )
     return stdout.decode("utf-8")
+
+
+def run_privileged_detached(
+    image: str,
+    command: list[str],
+    volumes: dict[str, str],
+    entrypoint: str | None = None,
+    environment: dict | None = None,
+) -> docker.models.containers.Container:
+    if client is None:
+        raise Exception("Docker not available")
+
+    return client.containers.run(
+        image,
+        command=command,
+        volumes={
+            # TODO: consider read-only
+            host: {"bind": guest, "mode": "rw"}
+            for host, guest in volumes.items()
+        },
+        network_mode="none",
+        pid_mode="host",
+        cgroupns="host",
+        privileged=True,
+        entrypoint=entrypoint,
+        environment=environment,
+        # automatically remove the container after it exits
+        remove=True,
+        # allocate a pseudo-TTY
+        tty=True,
+        # keep STDIN open
+        stdin_open=True,
+        stdout=True,
+        stderr=True,
+        detach=True,
+    )

@@ -1,56 +1,15 @@
 import json
 import pathlib
 import platform
-import shutil
-import subprocess
 import threading
 import time
 from datetime import datetime
-from typing import Callable
 
 from pydantic import BaseModel
 from rich import print
 
 import dyana_cli.loaders.docker as docker
 from dyana_cli.loaders.loader import GpuUsage, Loader, RamUsage
-
-
-class AsyncProcessRunner:
-    def __init__(self, command: list[str], on_output: Callable[[str], None]):
-        self.command = command
-        self.on_output = on_output
-        self.process: subprocess.Popen | None = None
-        self.output_thread: threading.Thread | None = None
-        self.is_running = False
-
-    def _read_output(self):
-        while self.is_running:
-            if self.process and self.process.stdout:
-                line = self.process.stdout.readline()
-                if line:
-                    self.on_output(line.decode().rstrip())
-                else:
-                    break
-
-    def start(self):
-        self.process = subprocess.Popen(
-            self.command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=False
-        )
-        self.is_running = True
-        self.output_thread = threading.Thread(target=self._read_output)
-        self.output_thread.daemon = True
-        self.output_thread.start()
-
-    def stop(self):
-        self.is_running = False
-        if self.process:
-            self.process.terminate()
-            self.process.wait()
-        if self.output_thread:
-            self.output_thread.join()
-
-    def is_alive(self) -> bool:
-        return self.process.poll() is None if self.process else False
 
 
 class Trace(BaseModel):
@@ -67,15 +26,10 @@ class Trace(BaseModel):
 
 class Tracer:
     TRACEE_IMAGE = "aquasec/tracee:latest"
-
     # TODO: do we want to trace other events? https://aquasecurity.github.io/tracee/latest/docs/flags/events.1/
     DEFAULT_EVENTS: list[str] = ["security_file_open", "sched_process_exec", "security_socket_*"]
 
     def __init__(self, loader: Loader, events: list[str] = DEFAULT_EVENTS):
-        self.docker = shutil.which("docker")
-        if not self.docker:
-            raise Exception("docker not found")
-
         print(":eye_in_speech_bubble:  [bold]tracer[/]: initializing ...")
 
         docker.pull(Tracer.TRACEE_IMAGE)
@@ -84,24 +38,7 @@ class Tracer:
         self.events = events
         self.errors: list[str] = []
         self.trace: list[dict] = []
-        # TODO: change this to a detached docker.run
         self.args = [
-            self.docker,
-            "run",
-            "--rm",
-            "--pid=host",
-            "--cgroupns=host",
-            "--privileged",
-            "-v",
-            "/etc/os-release:/etc/os-release-host:ro",
-            "-v",
-            "/var/run/docker.sock:/var/run/docker.sock",
-            "-e",
-            "LIBBPFGO_OSRELEASE_FILE=/etc/os-release-host",
-            # override the entrypoint so we can pass our own arguments
-            "--entrypoint",
-            "/tracee/tracee",
-            Tracer.TRACEE_IMAGE,
             "--output",
             "json",
             # only trace events that are part of a new container
@@ -113,9 +50,26 @@ class Tracer:
             self.args.append("--events")
             self.args.append(event)
 
-        self.runner = AsyncProcessRunner(self.args, self._on_output)
+        self.reader_thread: threading.Thread | None = None
+        self.container: docker.models.containers.Container | None = None
 
-    def _on_output(self, line: str) -> None:
+    def _reader_thread(self):
+        # attach to the container's logs with stream=True to get a generator
+        logs = self.container.logs(stream=True, follow=True)
+        line = ""
+        # loop while the container is running
+        while self.container.status in ["created", "running"]:
+            # https://github.com/docker/docker-py/issues/2913
+            for char in logs:
+                char = char.decode("utf-8")
+                line += char
+                if char == "\n":
+                    self._on_tracer_event(line)
+                    line = ""
+            # refresh container status
+            self.container.reload()
+
+    def _on_tracer_event(self, line: str) -> None:
         line = line.strip()
         if not line:
             return
@@ -128,6 +82,7 @@ class Tracer:
         #  KConfig: could not check enabled kconfig features
         #  KConfig: assuming kconfig values, might have unexpected behavior
 
+        # TODO: use faster json parser
         message = json.loads(line)
         if "level" in message:
             if message["level"] in ["fatal", "error"]:
@@ -144,7 +99,20 @@ class Tracer:
         self.errors.clear()
         self.trace.clear()
 
-        self.runner.start()
+        # start tracee in a detached container
+        self.container = docker.run_privileged_detached(
+            Tracer.TRACEE_IMAGE,
+            self.args,
+            volumes={"/etc/os-release": "/etc/os-release-host", "/var/run/docker.sock": "/var/run/docker.sock"},
+            # override the entrypoint so we can pass our own arguments
+            entrypoint="/tracee/tracee",
+            environment={"LIBBPFGO_OSRELEASE_FILE": "/etc/os-release-host"},
+        )
+
+        # start reading tracee output in a separate thread
+        self.reader_thread = threading.Thread(target=self._reader_thread)
+        self.reader_thread.daemon = True
+        self.reader_thread.start()
 
         # TODO: tracee takes a few seconds to warm up and trace events, is there a better way to wait for it?
         print(":eye_in_speech_bubble:  [bold]tracer[/]: warming up ...")
@@ -153,7 +121,7 @@ class Tracer:
 
     def _stop(self) -> None:
         print(":eye_in_speech_bubble:  [bold]tracer[/]: stopping ...")
-        self.runner.stop()
+        self.container.stop()
 
     def run_trace(
         self, model_path: pathlib.Path, model_input: str, allow_network: bool = False, allow_gpus: bool = True
