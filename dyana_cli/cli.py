@@ -72,6 +72,17 @@ def delta_fmt(before: int, after: int) -> str:
     return fmt
 
 
+def severity_fmt(level: int) -> str:
+    if level >= 3:
+        return "[bold red]high severity[/]"
+    elif level >= 2:
+        return "[bold yellow]moderate severity[/]"
+    elif level >= 1:
+        return "[bold green]low severity[/]"
+    else:
+        return "[bold dim]no severity[/]"
+
+
 @cli.command(help="Show a summary of the trace.")
 def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", default="trace.json")) -> None:
     with open(trace) as f:
@@ -281,3 +292,30 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         print()
 
     # print(py_packages)
+    security_events = {event for event in trace["events"] if event["eventName"] in Tracer.SECURITY_EVENTS}
+    if security_events:
+        print("[bold red]Security Events:[/]")
+
+        """
+          "metadata": {
+                "Version": "1",
+                "Description": "Possible dynamic code loading was detected as the binary's memory is both writable and executable. Writing to an executable allocated memory region could be a technique used by adversaries to run code undetected and without dropping executables.",
+                "Tags": null,
+                "Properties": {
+                    "Category": "defense-evasion",
+                    "Kubernetes_Technique": "",
+                    "Severity": 2,
+                    "Technique": "Software Packing",
+                    "external_id": "T1027.002",
+                    "id": "attack-pattern--deb98323-e13f-4b0c-8d94-175379069062",
+                    "signatureID": "TRC-104",
+                    "signatureName": "Dynamic code loading detected"
+                }
+            }
+        """
+        unique = {event["metadata"]["Properties"]["signatureName"]: event["metadata"] for event in security_events}
+        for signature, event in unique.items():
+            print(
+                f"  * {signature} ([dim]{event["Properties"]["Category"]}[/], {severity_fmt(event["Properties"]["Severity"])})"
+            )
+        print()

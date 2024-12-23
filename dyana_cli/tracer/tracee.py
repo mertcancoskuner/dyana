@@ -26,8 +26,47 @@ class Trace(BaseModel):
 
 class Tracer:
     TRACEE_IMAGE = "aquasec/tracee:latest"
+
+    # taken from https://github.com/aquasecurity/tracee/blob/main/docs/docs/policies/usage/cli.md?plain=1#L140
+    SECURITY_EVENTS: list[str] = [
+        "stdio_over_socket",
+        "k8s_api_connection",
+        "aslr_inspection",
+        "proc_mem_code_injection",
+        "docker_abuse",
+        "scheduled_task_mod",
+        "ld_preload",
+        "cgroup_notify_on_release",
+        "default_loader_mod",
+        "sudoers_modification",
+        "sched_debug_recon",
+        "system_request_key_mod",
+        "cgroup_release_agent",
+        "rcd_modification",
+        "core_pattern_modification",
+        "proc_kcore_read",
+        "proc_mem_access",
+        "hidden_file_created",
+        "anti_debugging",
+        "ptrace_code_injection",
+        "process_vm_write_inject",
+        "disk_mount",
+        "dynamic_code_loading",
+        "fileless_execution",
+        "illegitimate_shell",
+        "kernel_module_loading",
+        "k8s_cert_theft",
+        "proc_fops_hooking",
+        "syscall_hooking",
+        "dropped_executable",
+    ]
+
     # TODO: do we want to trace other events? https://aquasecurity.github.io/tracee/latest/docs/flags/events.1/
-    DEFAULT_EVENTS: list[str] = ["security_file_open", "sched_process_exec", "security_socket_*"]
+    DEFAULT_EVENTS: list[str] = [
+        "security_file_open",
+        "sched_process_exec",
+        "security_socket_*",
+    ] + SECURITY_EVENTS
 
     def __init__(self, loader: Loader, events: list[str] = DEFAULT_EVENTS):
         print(":eye_in_speech_bubble:  [bold]tracer[/]: initializing ...")
