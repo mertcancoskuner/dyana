@@ -19,6 +19,7 @@ cli = typer.Typer(
 @cli.command(help="Profile a model.")
 def trace(
     model: pathlib.Path = typer.Option(help="Path to the model to profile."),
+    # TODO: investigate use of rigging as an alternative to AutoModel
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
     input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
     events: list[str] = typer.Option(help="Events to trace.", default=Tracer.DEFAULT_EVENTS),
@@ -83,6 +84,7 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     print()
 
+    print(f"Platform    : [magenta]{trace['platform']}[/]")
     print(f"Model path  : [yellow]{trace['model_path']}[/]")
     print(f"Model input : [dim]{trace['model_input']}[/]")
     print(f"Started at  : {trace['started_at']}")

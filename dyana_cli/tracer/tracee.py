@@ -1,9 +1,9 @@
 import json
 import pathlib
+import platform
 import shutil
 import subprocess
 import threading
-import platform
 import time
 from datetime import datetime
 from typing import Callable
