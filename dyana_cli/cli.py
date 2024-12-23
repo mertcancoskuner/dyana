@@ -22,7 +22,6 @@ def trace(
     # TODO: investigate use of rigging as an alternative to AutoModel
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
     input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
-    events: list[str] = typer.Option(help="Events to trace.", default=Tracer.DEFAULT_EVENTS),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
 ) -> None:
@@ -35,7 +34,7 @@ def trace(
 
     # TODO: for now we only have "auto", figure out more specific loaders
     loader = Loader(loader)
-    tracer = Tracer(loader, events=events)
+    tracer = Tracer(loader)
 
     trace = tracer.run_trace(model, input, allow_network, allow_gpus)
 

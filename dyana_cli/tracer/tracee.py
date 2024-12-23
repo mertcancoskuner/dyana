@@ -25,7 +25,7 @@ class Trace(BaseModel):
 
 
 class Tracer:
-    TRACEE_IMAGE = "aquasec/tracee:latest"
+    DOCKER_IMAGE = "aquasec/tracee:latest"
 
     # taken from https://github.com/aquasecurity/tracee/blob/main/docs/docs/policies/usage/cli.md?plain=1#L140
     SECURITY_EVENTS: list[str] = [
@@ -68,13 +68,12 @@ class Tracer:
         "security_socket_*",
     ] + SECURITY_EVENTS
 
-    def __init__(self, loader: Loader, events: list[str] = DEFAULT_EVENTS):
+    def __init__(self, loader: Loader):
         print(":eye_in_speech_bubble:  [bold]tracer[/]: initializing ...")
 
-        docker.pull(Tracer.TRACEE_IMAGE)
+        docker.pull(Tracer.DOCKER_IMAGE)
 
         self.loader = loader
-        self.events = events
         self.errors: list[str] = []
         self.trace: list[dict] = []
         self.args = [
@@ -88,7 +87,7 @@ class Tracer:
             "--log",
             "debug",
         ]
-        for event in events:
+        for event in Tracer.DEFAULT_EVENTS:
             self.args.append("--events")
             self.args.append(event)
 
@@ -160,7 +159,7 @@ class Tracer:
 
         # start tracee in a detached container
         self.container = docker.run_privileged_detached(
-            Tracer.TRACEE_IMAGE,
+            Tracer.DOCKER_IMAGE,
             self.args,
             volumes={"/etc/os-release": "/etc/os-release-host", "/var/run/docker.sock": "/var/run/docker.sock"},
             # override the entrypoint so we can pass our own arguments
