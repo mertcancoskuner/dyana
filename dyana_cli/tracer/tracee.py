@@ -64,6 +64,8 @@ class Trace(BaseModel):
 
 
 class Tracer:
+    TRACEE_IMAGE = "aquasec/tracee:latest"
+
     # TODO: do we want to trace other events? https://aquasecurity.github.io/tracee/latest/docs/flags/events.1/
     DEFAULT_EVENTS: list[str] = ["security_file_open", "sched_process_exec", "security_socket_*"]
 
@@ -74,7 +76,7 @@ class Tracer:
 
         print(":eye_in_speech_bubble:  [bold]tracer[/]: initializing ...")
 
-        docker.pull("aquasec/tracee:latest")
+        docker.pull(Tracer.TRACEE_IMAGE)
 
         self.loader = loader
         self.events = events
@@ -94,9 +96,10 @@ class Tracer:
             "/var/run/docker.sock:/var/run/docker.sock",
             "-e",
             "LIBBPFGO_OSRELEASE_FILE=/etc/os-release-host",
+            # override the entrypoint so we can pass our own arguments
             "--entrypoint",
             "/tracee/tracee",
-            "aquasec/tracee:latest",
+            Tracer.TRACEE_IMAGE,
             "--output",
             "json",
             # only trace events that are part of a new container

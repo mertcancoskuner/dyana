@@ -79,6 +79,8 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         parser = cysimdjson.JSONParser()
         trace = parser.loads(raw)
 
+    # TODO: make this prettier
+
     print()
 
     print(f"Model path  : [yellow]{trace['model_path']}[/]")
@@ -98,7 +100,6 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     ram = trace["ram"]
 
-    # TODO: make this prettier, do not print delta if 0
     print("[bold yellow]RAM:[/]")
     print(f"  * start            : {sizeof_fmt(ram['start'])}")
     print(f"  * tokenizer loaded : {delta_fmt(ram['start'], ram['after_tokenizer_loaded'])}")
