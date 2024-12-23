@@ -292,30 +292,13 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         print()
 
     # print(py_packages)
+
     security_events = {event for event in trace["events"] if event["eventName"] in Tracer.SECURITY_EVENTS}
     if security_events:
         print("[bold red]Security Events:[/]")
-
-        """
-          "metadata": {
-                "Version": "1",
-                "Description": "Possible dynamic code loading was detected as the binary's memory is both writable and executable. Writing to an executable allocated memory region could be a technique used by adversaries to run code undetected and without dropping executables.",
-                "Tags": null,
-                "Properties": {
-                    "Category": "defense-evasion",
-                    "Kubernetes_Technique": "",
-                    "Severity": 2,
-                    "Technique": "Software Packing",
-                    "external_id": "T1027.002",
-                    "id": "attack-pattern--deb98323-e13f-4b0c-8d94-175379069062",
-                    "signatureID": "TRC-104",
-                    "signatureName": "Dynamic code loading detected"
-                }
-            }
-        """
         unique = {event["metadata"]["Properties"]["signatureName"]: event["metadata"] for event in security_events}
         for signature, event in unique.items():
-            print(
-                f"  * {signature} ([dim]{event["Properties"]["Category"]}[/], {severity_fmt(event["Properties"]["Severity"])})"
-            )
+            category = event["Properties"]["Category"]
+            severity_level = event["Properties"]["Severity"]
+            print(f"  * {signature} ([dim]{category}[/], {severity_fmt(severity_level)})")
         print()
