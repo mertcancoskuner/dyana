@@ -100,6 +100,7 @@ class Tracer:
         # attach to the container's logs with stream=True to get a generator
         logs = self.container.logs(stream=True, follow=True)
         line = ""
+
         # loop while the container is running
         while self.container.status in ["created", "running"]:
             # https://github.com/docker/docker-py/issues/2913
@@ -113,7 +114,8 @@ class Tracer:
                 # refresh container status
                 self.container.reload()
             except:
-                self.container.status = "deleted"
+                # container is deleted
+                break
 
     def _on_tracer_event(self, line: str) -> None:
         line = line.strip()
