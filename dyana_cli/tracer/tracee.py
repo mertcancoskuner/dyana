@@ -186,8 +186,7 @@ class Tracer:
     ) -> Trace:
         self._start()
 
-        events = [f"[yellow]{e}[/]" for e in self.events]
-        print(f":eye_in_speech_bubble:  [bold]tracer[/]: started tracing {len(events)} events ...")
+        print(":eye_in_speech_bubble:  [bold]tracer[/]: started ...")
 
         started_at = datetime.now()
         run = self.loader.run(model_path, model_input, allow_network, allow_gpus)
