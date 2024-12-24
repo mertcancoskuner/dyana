@@ -40,7 +40,7 @@ class Run(BaseModel):
 
 
 class Loader:
-    def __init__(self, name: str):
+    def __init__(self, name: str, build_args: dict[str, str] | None = None):
         # make sure that name does not include a path traversal
         if "/" in name or ".." in name:
             raise ValueError("Loader name cannot include a path traversal")
@@ -56,7 +56,9 @@ class Loader:
         print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
 
         self.name = f"dyana-{name}-loader"
-        self.image = docker.build(self.path, self.name)
+        self.image = docker.build(self.path, self.name, build_args)
+        self.extra_requirements = build_args.get("EXTRA_REQUIREMENTS", None) if build_args else None
+
         print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
 
     def run(self, model_path: pathlib.Path, input: str, allow_network: bool = False, allow_gpus: bool = True) -> Run:

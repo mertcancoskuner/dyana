@@ -27,6 +27,12 @@ Create a trace file for a given model with:
 dyana trace --model /path/to/model --input "This is an example sentence." --output trace.json
 ```
 
+If the model requires extra dependencies, you can pass them as:
+
+```bash
+dyana trace --model tohoku-nlp/bert-base-japanese ... --extra-requirements "protobuf fugashi ipadic"
+```
+
 Show a summary of the trace file with:
 
 ```bash

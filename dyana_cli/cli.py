@@ -24,6 +24,7 @@ def trace(
     input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
+    extra_requirements: str | None = typer.Option(help="Extra requirements to install.", default=None),
 ) -> None:
     # disable GPU on non-Linux systems
     if not no_gpu and platform.system() != "Linux":
@@ -31,9 +32,10 @@ def trace(
 
     allow_network = False
     allow_gpus = not no_gpu
+    build_args = {"EXTRA_REQUIREMENTS": extra_requirements} if extra_requirements else None
 
     # TODO: for now we only have "auto", figure out more specific loaders
-    loader = Loader(loader)
+    loader = Loader(loader, build_args)
     tracer = Tracer(loader)
 
     trace = tracer.run_trace(model, input, allow_network, allow_gpus)
@@ -115,6 +117,8 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
             tot_gpu_pressure += usage
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
+    if trace["extra_requirements"]:
+        print(f"Extra packages : {trace['extra_requirements']}")
     print(f"Model path     : [yellow]{trace['model_path']}[/]")
     print(f"Model input    : [dim]{trace['model_input']}[/]")
     print(f"Started at     : {trace['started_at']}")

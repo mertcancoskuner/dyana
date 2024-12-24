@@ -16,6 +16,7 @@ class Trace(BaseModel):
     started_at: datetime
     ended_at: datetime
     platform: str
+    extra_requirements: str | None = None
     model_path: str
     model_input: str
     errors: dict[str, list[str]] | None = None
@@ -206,6 +207,7 @@ class Tracer:
 
         return Trace(
             platform=platform.platform(),
+            extra_requirements=self.loader.extra_requirements,
             model_path=str(model_path.resolve().absolute()),
             started_at=started_at,
             ended_at=ended_at,

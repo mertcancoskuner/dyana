@@ -28,7 +28,9 @@ def sanitized_agent_name(name: str) -> str:
     return name
 
 
-def build(directory: str | pathlib.Path, name: str, force_rebuild: bool = False) -> Image:
+def build(
+    directory: str | pathlib.Path, name: str, build_args: dict[str, str] | None = None, force_rebuild: bool = False
+) -> Image:
     if client is None:
         raise Exception("Docker not available")
 
@@ -44,6 +46,7 @@ def build(directory: str | pathlib.Path, name: str, force_rebuild: bool = False)
         decode=True,
         nocache=force_rebuild,
         pull=force_rebuild,
+        buildargs=build_args,
         # remove intermediate containers
         rm=True,
     ):
