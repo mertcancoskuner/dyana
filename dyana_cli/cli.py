@@ -117,7 +117,7 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
             tot_gpu_pressure += usage
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
-    if trace["extra_requirements"]:
+    if "extra_requirements" in trace:
         print(f"Extra packages : {trace['extra_requirements']}")
     print(f"Model path     : [yellow]{trace['model_path']}[/]")
     print(f"Model input    : [dim]{trace['model_input']}[/]")
@@ -145,7 +145,7 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
     print(f"  * model inference  : {delta_fmt(ram['after_model_loaded'], ram['after_model_inference'])}")
     print()
 
-    if trace["gpu"] and num_gpus:
+    if "gpu" in trace and num_gpus:
         print("[bold green]GPU:[/]")
 
         for i in range(num_gpus):
