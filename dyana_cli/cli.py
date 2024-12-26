@@ -19,7 +19,6 @@ cli = typer.Typer(
 @cli.command(help="Profile a model.")
 def trace(
     model: pathlib.Path = typer.Option(help="Path to the model to profile."),
-    # TODO: investigate use of rigging as an alternative to AutoModel
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
     input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
