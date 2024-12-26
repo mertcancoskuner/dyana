@@ -33,6 +33,12 @@ If the model requires extra dependencies, you can pass them as:
 dyana trace --model tohoku-nlp/bert-base-japanese ... --extra-requirements "protobuf fugashi ipadic"
 ```
 
+**By default, Dyana will not allow network access to the model container.** If you need to allow it, you can pass the `--allow-network` flag:
+
+```bash
+dyana trace ... --allow-network
+```
+
 Show a summary of the trace file with:
 
 ```bash
