@@ -67,6 +67,7 @@ class Tracer:
         "security_file_open",
         "sched_process_exec",
         "security_socket_*",
+        "net_packet_dns",
     ] + SECURITY_EVENTS
 
     def __init__(self, loader: Loader):

@@ -217,16 +217,33 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         print()
 
     connects = [event for event in trace["events"] if event["eventName"] == "security_socket_connect"]
-    if connects:
+    dns_queries = [event for event in trace["events"] if event["eventName"] == "net_packet_dns"]
+    if connects or dns_queries:
         print("[bold yellow]Network:[/]")
-        for connect in connects:
-            remote_addr = [arg["value"] for arg in connect["args"] if arg["name"] == "remote_addr"][0]
-            remote_addr_family = remote_addr["sa_family"]
-            remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
 
-            print(
-                f"  * {connect['processName']} -> [bold red]{connect['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
-            )
+        all = connects + dns_queries
+        all.sort(key=lambda e: e["timestamp"])
+
+        for event in all:
+            if event["eventName"] == "security_socket_connect":
+                remote_addr = [arg["value"] for arg in event["args"] if arg["name"] == "remote_addr"][0]
+                remote_addr_family = remote_addr["sa_family"]
+                remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
+
+                print(
+                    f"  * {event['processName']} -> [bold red]{event['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
+                )
+
+            else:
+                data = [arg["value"] for arg in event["args"] if arg["name"] == "proto_dns"][0]
+                question_names = [q["name"] for q in data["questions"]]
+                answers = [f'{a["name"]}={a['IP']}' for a in data["answers"]]
+
+                if not answers:
+                    print(f"  * {event['processName']} | [bold red]dns[/] | question={', '.join(question_names)}")
+                else:
+                    print(f"  * {event['processName']} | [bold red]dns[/] | answer={', '.join(answers)}")
+
         print()
 
     opens = [event for event in trace["events"] if event["eventName"] == "security_file_open"]
