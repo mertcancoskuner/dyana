@@ -35,8 +35,8 @@ class GpuUsage(BaseModel):
 class Run(BaseModel):
     input: str
     errors: dict[str, str | None] | None = None
-    ram: RamUsage
-    gpu: GpuUsage
+    ram: RamUsage | None = None
+    gpu: GpuUsage | None = None
 
 
 class Loader:

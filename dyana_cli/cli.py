@@ -107,7 +107,8 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
     )
 
     tot_gpu_pressure: int = 0
-    if trace["gpu"]:
+    num_gpus: int = 0
+    if "gpu" in trace and trace["gpu"]:
         num_gpus = len(trace["gpu"]["start"])
         for i in range(num_gpus):
             usage = (

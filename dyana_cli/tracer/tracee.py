@@ -21,8 +21,8 @@ class Trace(BaseModel):
     model_input: str
     errors: dict[str, list[str]] | None = None
     events: list[dict] = []
-    ram: RamUsage
-    gpu: GpuUsage
+    ram: RamUsage | None = None
+    gpu: GpuUsage | None = None
 
 
 class Tracer:
