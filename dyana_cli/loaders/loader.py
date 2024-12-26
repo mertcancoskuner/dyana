@@ -68,6 +68,10 @@ class Loader:
         model_name = model_path.name.lower()
         model_volume = f"/{model_name}"
 
+        if allow_network:
+            print(
+                ":popcorn: [bold]loader[/]: [yellow]warning: allowing bridged network access to the model container[/]"
+            )
         print(f":popcorn: [bold]loader[/]: executing inference for [bold]{model_path}[/] ...")
 
         try:

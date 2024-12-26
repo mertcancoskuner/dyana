@@ -24,13 +24,13 @@ def trace(
     input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
+    allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
     extra_requirements: str | None = typer.Option(help="Extra requirements to install.", default=None),
 ) -> None:
     # disable GPU on non-Linux systems
     if not no_gpu and platform.system() != "Linux":
         no_gpu = True
 
-    allow_network = False
     allow_gpus = not no_gpu
     build_args = {"EXTRA_REQUIREMENTS": extra_requirements} if extra_requirements else None
 
