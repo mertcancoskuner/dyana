@@ -33,7 +33,7 @@ class GpuUsage(BaseModel):
 
 
 class Run(BaseModel):
-    input: str
+    input: str | None = None
     errors: dict[str, str | None] | None = None
     ram: RamUsage | None = None
     gpu: GpuUsage | None = None
