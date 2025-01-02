@@ -105,7 +105,11 @@ class Tracer:
         while self.container.status in ["created", "running"]:
             # https://github.com/docker/docker-py/issues/2913
             for char in logs:
-                char = char.decode("utf-8")
+                try:
+                    char = char.decode("utf-8")
+                except UnicodeDecodeError:
+                    char = "x"
+
                 line += char
                 if char == "\n":
                     self._on_tracer_event(line)

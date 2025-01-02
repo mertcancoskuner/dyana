@@ -105,13 +105,14 @@ class LoaderSettings(BaseModel):
 
 
 class Loader:
-    def __init__(self, name: str, args: list[str] | None = None):
+    def __init__(self, name: str, platform: str | None, args: list[str] | None = None):
         # make sure that name does not include a path traversal
         if "/" in name or ".." in name:
             raise ValueError("Loader name cannot include a path traversal")
 
         self.path = os.path.join(loaders.__path__[0], name)
 
+        self.platform = platform
         self.settings_path = os.path.join(self.path, "settings.yml")
         self.build_args: dict[str, str] | None = None
         self.args: list[ParsedArgument] | None = None
@@ -133,9 +134,14 @@ class Loader:
         print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
 
         self.name = f"dyana-{name}-loader"
-        self.image = docker.build(self.path, self.name, self.build_args)
+        self.image = docker.build(self.path, self.name, platform=self.platform, build_args=self.build_args)
 
-        print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
+        if self.platform:
+            print(
+                f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/] ({self.platform})"
+            )
+        else:
+            print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
 
     def run(self, allow_network: bool = False, allow_gpus: bool = True) -> Run:
         volumes = {}

@@ -1,5 +1,5 @@
 import pathlib
-import platform
+import platform as platform_pkg
 
 # NOTE: json is too slow
 import cysimdjson
@@ -20,18 +20,19 @@ cli = typer.Typer(
 def trace(
     ctx: typer.Context,
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
+    platform: str | None = typer.Option(help="Platform to use.", default=None),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
 ) -> None:
     # disable GPU on non-Linux systems
-    if not no_gpu and platform.system() != "Linux":
+    if not no_gpu and platform_pkg.system() != "Linux":
         no_gpu = True
 
     allow_gpus = not no_gpu
 
     # TODO: for now we only have "auto", figure out more specific loaders
-    loader = Loader(loader, ctx.args)
+    loader = Loader(loader, platform, ctx.args)
     tracer = Tracer(loader)
 
     trace = tracer.run_trace(allow_network, allow_gpus)
