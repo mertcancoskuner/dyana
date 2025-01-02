@@ -16,28 +16,25 @@ cli = typer.Typer(
 )
 
 
-@cli.command(help="Profile a model.")
+@cli.command(help="Profile a model.", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def trace(
-    model: pathlib.Path = typer.Option(help="Path to the model to profile."),
+    ctx: typer.Context,
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
-    input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
-    extra_requirements: str | None = typer.Option(help="Extra requirements to install.", default=None),
 ) -> None:
     # disable GPU on non-Linux systems
     if not no_gpu and platform.system() != "Linux":
         no_gpu = True
 
     allow_gpus = not no_gpu
-    build_args = {"EXTRA_REQUIREMENTS": extra_requirements} if extra_requirements else None
 
     # TODO: for now we only have "auto", figure out more specific loaders
-    loader = Loader(loader, build_args)
+    loader = Loader(loader, ctx.args)
     tracer = Tracer(loader)
 
-    trace = tracer.run_trace(model, input, allow_network, allow_gpus)
+    trace = tracer.run_trace(allow_network, allow_gpus)
 
     if trace.errors:
         print(":exclamation: [bold red]errors:[/bold red]")
@@ -117,10 +114,16 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
             tot_gpu_pressure += usage
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
-    if "extra_requirements" in trace:
-        print(f"Extra packages : {trace['extra_requirements']}")
-    print(f"Model path     : [yellow]{trace['model_path']}[/]")
-    print(f"Model input    : [dim]{trace['model_input']}[/]")
+
+    if trace["build_args"]:
+        print(f"Build args     : {', '.join(f'{k}={v}' for k, v in trace['build_args'].items())}")
+
+    if trace["arguments"]:
+        print(f"Arguments      : {' '.join(trace['arguments'])}")
+
+    if trace["volumes"]:
+        print(f"Volumes        : {', '.join(f'{v} ({k})' for k, v in trace['volumes'].items())}")
+
     print(f"Started at     : {trace['started_at']}")
     print(f"Ended at       : {trace['ended_at']}")
     print(f"RAM usage      : [yellow][bold]{sizeof_fmt(tot_mem_pressure)}[/]")

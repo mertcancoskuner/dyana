@@ -1,5 +1,4 @@
 import json
-import pathlib
 import platform
 import threading
 import time
@@ -15,10 +14,10 @@ from dyana_cli.loaders.loader import GpuUsage, Loader, RamUsage
 class Trace(BaseModel):
     started_at: datetime
     ended_at: datetime
+    build_args: dict[str, str] | None = None
+    arguments: list[str] | None = None
+    volumes: dict[str, str] | None = None
     platform: str
-    extra_requirements: str | None = None
-    model_path: str
-    model_input: str
     errors: dict[str, list[str]] | None = None
     events: list[dict] = []
     ram: RamUsage | None = None
@@ -182,15 +181,13 @@ class Tracer:
         print(":eye_in_speech_bubble:  [bold]tracer[/]: stopping ...")
         self.container.stop()
 
-    def run_trace(
-        self, model_path: pathlib.Path, model_input: str, allow_network: bool = False, allow_gpus: bool = True
-    ) -> Trace:
+    def run_trace(self, allow_network: bool = False, allow_gpus: bool = True) -> Trace:
         self._start()
 
         print(":eye_in_speech_bubble:  [bold]tracer[/]: started ...")
 
         started_at = datetime.now()
-        run = self.loader.run(model_path, model_input, allow_network, allow_gpus)
+        run = self.loader.run(allow_network, allow_gpus)
         ended_at = datetime.now()
 
         self._stop()
@@ -208,13 +205,13 @@ class Tracer:
 
         return Trace(
             platform=platform.platform(),
-            extra_requirements=self.loader.extra_requirements,
-            model_path=str(model_path.resolve().absolute()),
             started_at=started_at,
             ended_at=ended_at,
-            model_input=model_input,
             errors=errors if errors else None,
             events=self.trace,
             ram=run.ram,
             gpu=run.gpu,
+            build_args=run.build_args,
+            arguments=run.arguments,
+            volumes=run.volumes,
         )
