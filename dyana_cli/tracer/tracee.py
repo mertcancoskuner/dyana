@@ -76,7 +76,6 @@ class Tracer:
             "--output",
             "json",
             # only trace events that are part of a new container
-            # TODO: find a more specific way to trace from the new container
             "--scope",
             "container=new",
             # enable debug logging to know when tracee is ready
