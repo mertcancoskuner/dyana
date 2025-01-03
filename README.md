@@ -39,7 +39,7 @@ dyana trace --loader run_elf --elf /path/to/linux_executable --platform linux/am
 dyana trace --loader run_elf --elf /path/to/linux_executable --allow-network
 ```
 
-<img alt="run_elf" src="https://github.com/dreadnode/dyana/blob/main/examples/linux-exe-on-macos.png?raw=true"/>
+<img alt="run_elf" src="https://github.com/dreadnode/dyana/blob/main/examples/mirai.png?raw=true"/>
 
 
 ## Requirements

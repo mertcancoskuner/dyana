@@ -31,6 +31,7 @@ def trace(
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
     platform: str | None = typer.Option(help="Platform to use.", default=None),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
+    timeout: int = typer.Option(help="Execution timeout in seconds.", default=60),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
 ) -> None:
@@ -38,8 +39,7 @@ def trace(
     if not no_gpu and platform_pkg.system() != "Linux":
         no_gpu = True
 
-    # TODO: for now we only have "auto", figure out more specific loaders
-    loader = Loader(loader, platform, ctx.args)
+    loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args)
     tracer = Tracer(loader)
 
     trace = tracer.run_trace(allow_network, not no_gpu)

@@ -52,6 +52,7 @@ def view_header(trace):
     print(f"Total Events   : {len(trace['events'])}")
 
     if run["errors"]:
+        print()
         print("[bold red]Errors:[/bold red]\n")
         for group, error in run["errors"].items():
             if error:

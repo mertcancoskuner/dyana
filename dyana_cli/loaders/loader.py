@@ -1,5 +1,8 @@
+from datetime import datetime
 import os
 import pathlib
+import threading
+import time
 
 import docker as docker_og
 from pydantic import BaseModel
@@ -33,14 +36,17 @@ class Run(BaseModel):
 
 
 class Loader:
-    def __init__(self, name: str, platform: str | None, args: list[str] | None = None):
+    def __init__(self, name: str, timeout: int, platform: str | None, args: list[str] | None = None):
         # make sure that name does not include a path traversal
         if "/" in name or ".." in name:
             raise ValueError("Loader name cannot include a path traversal")
 
         self.name = name
+        self.timeout = timeout
         self.path = os.path.join(loaders.__path__[0], name)
-
+        self.reader_thread: threading.Thread | None = None
+        self.container: docker.models.containers.Container | None = None
+        self.output: str = ""
         self.platform = platform
         self.settings_path = os.path.join(self.path, "settings.yml")
         self.build_args: dict[str, str] | None = None
@@ -71,6 +77,28 @@ class Loader:
             )
         else:
             print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
+
+    def _reader_thread(self):
+        # attach to the container's logs with stream=True to get a generator
+        logs = self.container.logs(stream=True, follow=True)
+
+        # loop while the container is running
+        while self.container.status in ["created", "running"]:
+            # https://github.com/docker/docker-py/issues/2913
+            for char in logs:
+                try:
+                    char = char.decode("utf-8")
+                except UnicodeDecodeError:
+                    char = char.decode("utf-8", errors="replace")
+
+                self.output += char
+
+            try:
+                # refresh container status
+                self.container.reload()
+            except:
+                # container is deleted
+                break
 
     def run(self, allow_network: bool = False, allow_gpus: bool = True) -> Run:
         volumes = {}
@@ -104,16 +132,42 @@ class Loader:
             print(":popcorn: [bold]loader[/]: executing ...")
 
         try:
-            out = docker.run(self.image, arguments, volumes, allow_network, allow_gpus)
-            if not out.startswith("{"):
-                idx = out.find("{")
+            self.output = ""
+            self.container = docker.run_detached(self.image, arguments, volumes, allow_network, allow_gpus)
+            self.reader_thread = threading.Thread(target=self._reader_thread)
+            self.reader_thread.start()
+
+            started_at = datetime.now()
+            while self.container.status in ["created", "running"]:
+                time.sleep(1.0)
+                try:
+                    # refresh container status
+                    self.container.reload()
+                except:
+                    # container is deleted
+                    break
+
+                if (datetime.now() - started_at).total_seconds() > self.timeout:
+                    self.container.kill()
+                    print(":popcorn: [bold]loader[/]: [red]timeout reached, killing container[/]")
+                    run = Run()
+                    run.loader_name = self.name
+                    run.build_platform = self.platform
+                    run.build_args = self.build_args
+                    run.arguments = arguments
+                    run.volumes = volumes
+                    run.errors = {"timeout": "timeout reached, killing container"}
+                    return run
+
+            if not self.output.startswith("{"):
+                idx = self.output.find("{")
                 if idx > 0:
-                    before = out[:idx]
-                    out = out[idx:]
+                    before = self.output[:idx]
+                    self.output = self.output[idx:]
                     print(f":popcorn: [bold]loader[/]: [dim]{before}[/]")
 
             try:
-                run = Run.model_validate_json(out)
+                run = Run.model_validate_json(self.output)
                 run.loader_name = self.name
                 run.build_platform = self.platform
                 run.build_args = self.build_args
@@ -122,7 +176,7 @@ class Loader:
                 return run
             except Exception as e:
                 print(f"Validation error: {e}")
-                print(f"Invalid JSON: [bold red]{out}[/]")
+                print(f"Invalid JSON: [bold red]{self.output}[/]")
                 raise e
 
         except docker_og.errors.ContainerError as ce:
