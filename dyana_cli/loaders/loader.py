@@ -3,20 +3,12 @@ import pathlib
 
 import docker as docker_og
 from pydantic import BaseModel
-from pydantic_yaml import parse_yaml_raw_as, to_yaml_str
+from pydantic_yaml import parse_yaml_raw_as
 from rich import print
-
 
 import dyana_cli.loaders as loaders
 import dyana_cli.loaders.docker as docker
-
-
-class RamUsage(BaseModel):
-    start: int
-    after_tokenizer_loaded: int | None = 0
-    after_tokenization: int | None = 0
-    after_model_loaded: int | None = 0
-    after_model_inference: int | None = 0
+from dyana_cli.loaders.settings import LoaderSettings, ParsedArgument
 
 
 class GpuDeviceUsage(BaseModel):
@@ -26,82 +18,17 @@ class GpuDeviceUsage(BaseModel):
     free_memory: int
 
 
-class GpuUsage(BaseModel):
-    start: list[GpuDeviceUsage]
-    after_tokenizer_loaded: list[GpuDeviceUsage] | None = []
-    after_tokenization: list[GpuDeviceUsage] | None = []
-    after_model_loaded: list[GpuDeviceUsage] | None = []
-    after_model_inference: list[GpuDeviceUsage] | None = []
-
-
 class Run(BaseModel):
+    build_platform: str | None = None
     build_args: dict[str, str] | None = None
     arguments: list[str] | None = None
     volumes: dict[str, str] | None = None
-    errors: dict[str, str | None] | None = None
-    ram: RamUsage | None = None
-    gpu: GpuUsage | None = None
-
-
-class LoaderArgument(BaseModel):
-    name: str
-    description: str
-    default: str | None = None
-    required: bool = True
-    volume: bool = False
-
-
-class ParsedArgument(BaseModel):
-    name: str
-    value: str
-    volume: bool = False
-
-
-class LoaderSettings(BaseModel):
-    build_args: dict[str, str] | None = None
-    args: list[LoaderArgument] | None = None
-
-    def _parse_arg_name_from(self, name: str, args: list[str]) -> str | None:
-        found_pre = False
-        arg_name = f"--{name}"
-        for arg in args:
-            if arg == arg_name:
-                found_pre = True
-                continue
-
-            elif found_pre:
-                return arg
-
-            elif arg.startswith(f"{arg_name}="):
-                return arg.split("=")[1]
-
-        return None
-
-    def parse_build_args(self, args: list[str]) -> dict[str, str] | None:
-        build_args: dict[str, str] | None = None
-        if self.build_args:
-            build_args = {}
-            for arg_name, build_arg_name in self.build_args.items():
-                value = self._parse_arg_name_from(arg_name, args)
-                if value:
-                    build_args[build_arg_name] = value
-
-        return build_args
-
-    def parse_args(self, args: list[str]) -> list[ParsedArgument] | None:
-        parsed_args: list[ParsedArgument] | None = None
-        if self.args:
-            parsed_args = []
-            for arg in self.args:
-                value = self._parse_arg_name_from(arg.name, args)
-                if value:
-                    parsed_args.append(ParsedArgument(name=arg.name, value=value, volume=arg.volume))
-                elif arg.default:
-                    parsed_args.append(ParsedArgument(name=arg.name, value=arg.default, volume=arg.volume))
-                elif arg.required:
-                    raise ValueError(f"Argument --{arg.name} is required")
-
-        return parsed_args
+    errors: dict[str, str] | None = None
+    ram: dict[str, int] | None = None
+    gpu: dict[str, list[GpuDeviceUsage]] | None = None
+    stdout: str | None = None
+    stderr: str | None = None
+    exit_code: int | None = None
 
 
 class Loader:
@@ -185,6 +112,7 @@ class Loader:
 
             try:
                 run = Run.model_validate_json(out)
+                run.build_platform = self.platform
                 run.build_args = self.build_args
                 run.arguments = arguments
                 run.volumes = volumes

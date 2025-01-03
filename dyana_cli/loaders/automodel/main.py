@@ -43,12 +43,7 @@ if __name__ == "__main__":
 
     path: str = os.path.abspath(args.model)
     inputs: t.Any | None = None
-
-    errors: dict[str, str | None] = {
-        "tokenizer": None,
-        "model": None,
-    }
-
+    errors: dict[str, str] = {}
     ram: dict[str, int] = {"start": get_peak_rss()}
     gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

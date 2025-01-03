@@ -1,7 +1,9 @@
 import argparse
 import json
-import resource
 import os
+import resource
+import subprocess
+import typing as t
 
 
 def get_peak_rss() -> int:
@@ -14,23 +16,26 @@ if __name__ == "__main__":
     parser.add_argument("--elf", help="Path to ELF file", required=True)
     args = parser.parse_args()
 
-    stdout: str = ""
-    stderr: str = ""
-    errors: dict[str, str | None] = {}
-    ram: dict[str, int] = {"start": get_peak_rss()}
+    result: dict[str, t.Any] = {
+        "ram": {"start": get_peak_rss()},
+        "errors": {},
+        "stdout": None,
+        "stderr": None,
+        "exit_code": None,
+    }
 
     if not os.path.exists(args.elf):
-        errors["elf"] = "ELF file not found"
+        result["errors"]["elf"] = "ELF file not found"
     else:
-        os.system(f"{args.elf} > /dev/null 2>&1")
+        try:
+            ret = subprocess.run([args.elf], capture_output=True, text=True, errors="replace")
 
-    print(
-        json.dumps(
-            {
-                "ram": ram,
-                "errors": errors,
-                "stdout": stdout,
-                "stderr": stderr,
-            }
-        )
-    )
+            result["ram"]["after_execution"] = get_peak_rss()
+
+            result["stdout"] = ret.stdout
+            result["stderr"] = ret.stderr
+            result["exit_code"] = ret.returncode
+        except Exception as e:
+            result["errors"]["elf"] = str(e)
+
+    print(json.dumps(result))

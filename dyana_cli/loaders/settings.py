@@ -1,0 +1,62 @@
+from pydantic import BaseModel
+
+
+class LoaderArgument(BaseModel):
+    name: str
+    description: str
+    default: str | None = None
+    required: bool = True
+    volume: bool = False
+
+
+class ParsedArgument(BaseModel):
+    name: str
+    value: str
+    volume: bool = False
+
+
+class LoaderSettings(BaseModel):
+    build_args: dict[str, str] | None = None
+    args: list[LoaderArgument] | None = None
+
+    def _parse_arg_name_from(self, name: str, args: list[str]) -> str | None:
+        found_pre = False
+        arg_name = f"--{name}"
+        for arg in args:
+            if arg == arg_name:
+                found_pre = True
+                continue
+
+            elif found_pre:
+                return arg
+
+            elif arg.startswith(f"{arg_name}="):
+                return arg.split("=")[1]
+
+        return None
+
+    def parse_build_args(self, args: list[str]) -> dict[str, str] | None:
+        build_args: dict[str, str] | None = None
+        if self.build_args:
+            build_args = {}
+            for arg_name, build_arg_name in self.build_args.items():
+                value = self._parse_arg_name_from(arg_name, args)
+                if value:
+                    build_args[build_arg_name] = value
+
+        return build_args
+
+    def parse_args(self, args: list[str]) -> list[ParsedArgument] | None:
+        parsed_args: list[ParsedArgument] | None = None
+        if self.args:
+            parsed_args = []
+            for arg in self.args:
+                value = self._parse_arg_name_from(arg.name, args)
+                if value:
+                    parsed_args.append(ParsedArgument(name=arg.name, value=value, volume=arg.volume))
+                elif arg.default:
+                    parsed_args.append(ParsedArgument(name=arg.name, value=arg.default, volume=arg.volume))
+                elif arg.required:
+                    raise ValueError(f"Argument --{arg.name} is required")
+
+        return parsed_args
