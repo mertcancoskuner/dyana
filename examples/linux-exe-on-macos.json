@@ -5,6 +5,7 @@
     "run": {
         "build_platform": "linux/amd64",
         "build_args": null,
+        "loader_name": "run_elf",
         "arguments": [
             "--elf",
             "/linux_test_executable"

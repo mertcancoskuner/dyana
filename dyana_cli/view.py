@@ -36,6 +36,7 @@ def view_header(trace):
     run = trace["run"]
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
+    print(f"Loader         : [bold]{trace['run']['loader_name']}[/]")
 
     if run["build_args"]:
         print(f"Build args     : {', '.join(f'{k}={v}' for k, v in run['build_args'].items())}")

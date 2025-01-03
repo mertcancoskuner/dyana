@@ -19,6 +19,7 @@ class GpuDeviceUsage(BaseModel):
 
 
 class Run(BaseModel):
+    loader_name: str | None = None
     build_platform: str | None = None
     build_args: dict[str, str] | None = None
     arguments: list[str] | None = None
@@ -37,6 +38,7 @@ class Loader:
         if "/" in name or ".." in name:
             raise ValueError("Loader name cannot include a path traversal")
 
+        self.name = name
         self.path = os.path.join(loaders.__path__[0], name)
 
         self.platform = platform
@@ -112,6 +114,7 @@ class Loader:
 
             try:
                 run = Run.model_validate_json(out)
+                run.loader_name = self.name
                 run.build_platform = self.platform
                 run.build_args = self.build_args
                 run.arguments = arguments
