@@ -99,6 +99,8 @@ def run(
             for host, guest in volumes.items()
         },
         network_mode=network_mode,
+        # this allow us to log dns requests even if the container is in network mode "none"
+        dns=["127.0.0.1"] if not allow_network else None,
         # automatically remove the container after it exits
         remove=True,
         # allocate a pseudo-TTY
