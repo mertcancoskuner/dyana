@@ -21,11 +21,11 @@ from dyana_cli.view import (
 cli = typer.Typer(
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
-    help="Blackbox model profiler.",
+    help="Blackbox profiler.",
 )
 
 
-@cli.command(help="Profile a model.", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+@cli.command(help="Profile.", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def trace(
     ctx: typer.Context,
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
@@ -38,13 +38,11 @@ def trace(
     if not no_gpu and platform_pkg.system() != "Linux":
         no_gpu = True
 
-    allow_gpus = not no_gpu
-
     # TODO: for now we only have "auto", figure out more specific loaders
     loader = Loader(loader, platform, ctx.args)
     tracer = Tracer(loader)
 
-    trace = tracer.run_trace(allow_network, allow_gpus)
+    trace = tracer.run_trace(allow_network, not no_gpu)
 
     print(f":card_file_box:  saving {len(trace.events)} events to {output}\n")
 
