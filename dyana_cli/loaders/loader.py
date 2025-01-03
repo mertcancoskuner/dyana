@@ -46,6 +46,7 @@ class Loader:
         self.path = os.path.join(loaders.__path__[0], name)
         self.reader_thread: threading.Thread | None = None
         self.container: docker.models.containers.Container | None = None
+        self.container_id: str | None = None
         self.output: str = ""
         self.platform = platform
         self.settings_path = os.path.join(self.path, "settings.yml")
@@ -134,6 +135,7 @@ class Loader:
         try:
             self.output = ""
             self.container = docker.run_detached(self.image, arguments, volumes, allow_network, allow_gpus)
+            self.container_id = self.container.id
             self.reader_thread = threading.Thread(target=self._reader_thread)
             self.reader_thread.start()
 

@@ -191,8 +191,6 @@ class Tracer:
 
         self._stop()
 
-        # TODO: filter out any events from containers different than the one we created
-
         if self.errors:
             run.errors["tracer"] = self.errors
 
@@ -200,6 +198,7 @@ class Tracer:
             platform=platform.platform(),
             started_at=started_at,
             ended_at=ended_at,
-            events=self.trace,
+            # filter out any events from containers different than the one we created
+            events=[event for event in self.trace if event["containerId"].lower() == self.loader.container_id.lower()],
             run=run,
         )
