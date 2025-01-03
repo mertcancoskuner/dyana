@@ -86,29 +86,37 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     print()
 
-    ram = trace["run"]["ram"]
-    stages = list(ram.keys())
-    last_stage = stages[-1]
-    tot_mem_pressure = max(ram[stage] for stage in stages)
+    run = trace["run"]
+    ram = run["ram"]
+    ram_stages = list(ram.keys())
+    tot_mem_pressure = max(ram[stage] for stage in ram_stages)
 
     tot_gpu_pressure: int = 0
     num_gpus: int = 0
-    if "gpu" in trace and trace["gpu"]:
-        num_gpus = len(trace["gpu"]["start"])
+    gpu_stages: list[str] = []
+    first_gpu_stage: str = ""
+    last_gpu_stage: str = ""
+
+    if "gpu" in run and run["gpu"]:
+        gpu_stages = list(run["gpu"].keys())
+        first_gpu_stage = gpu_stages[0]
+        last_gpu_stage = gpu_stages[-1]
+
+        num_gpus = len(run["gpu"][first_gpu_stage])
         for i in range(num_gpus):
-            usage = trace["gpu"][last_stage][i]["total_memory"] - trace["gpu"][last_stage][i]["free_memory"]
+            usage = run["gpu"][last_gpu_stage][i]["total_memory"] - run["gpu"][last_gpu_stage][i]["free_memory"]
             tot_gpu_pressure += usage
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
 
-    if trace["run"]["build_args"]:
-        print(f"Build args     : {', '.join(f'{k}={v}' for k, v in trace['run']['build_args'].items())}")
+    if run["build_args"]:
+        print(f"Build args     : {', '.join(f'{k}={v}' for k, v in run['build_args'].items())}")
 
-    if trace["run"]["arguments"]:
-        print(f"Arguments      : {' '.join(trace['run']['arguments'])}")
+    if run["arguments"]:
+        print(f"Arguments      : {' '.join(run['arguments'])}")
 
-    if trace["run"]["volumes"]:
-        print(f"Volumes        : {', '.join(f'{v} ({k})' for k, v in trace['run']['volumes'].items())}")
+    if run["volumes"]:
+        print(f"Volumes        : {', '.join(f'{v} ({k})' for k, v in run['volumes'].items())}")
 
     print(f"Started at     : {trace['started_at']}")
     print(f"Ended at       : {trace['ended_at']}")
@@ -117,27 +125,27 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         print(f"GPU vRAM usage : [green][bold]{sizeof_fmt(tot_gpu_pressure)}[/]")
     print(f"Total Events   : {len(trace['events'])}")
 
-    if trace["run"]["errors"]:
+    if run["errors"]:
         print("[bold red]Errors:[/bold red]\n")
-        for group, error in trace["run"]["errors"].items():
+        for group, error in run["errors"].items():
             if error:
                 print(f"  * [b]{group}[/]: {error}")
         print()
 
-    if trace["run"]["stdout"] is not None:
-        print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{trace['run']['stdout'][:80].strip()}[/]")
+    if run["stdout"] is not None:
+        print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{run['stdout'][:80].strip()}[/]")
 
-    if trace["run"]["stderr"] is not None:
-        print(f"[bold red]Stderr[/bold red]         : {trace['run']['stderr'][:80].strip()}")
+    if run["stderr"] is not None:
+        print(f"[bold red]Stderr[/bold red]         : {run['stderr'][:80].strip()}")
 
-    if trace["run"]["exit_code"] is not None:
-        print(f"[bold blue]Exit code[/bold blue]      : {trace['run']['exit_code']}")
+    if run["exit_code"] is not None:
+        print(f"[bold blue]Exit code[/bold blue]      : {run['exit_code']}")
 
     print()
 
     print("[bold yellow]RAM:[/]")
     prev_stage = None
-    for stage in stages:
+    for stage in ram_stages:
         if prev_stage is None:
             print(f"  * {stage} : {sizeof_fmt(ram[stage])}")
         else:
@@ -146,67 +154,25 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     print()
 
-    if "gpu" in trace and num_gpus:
+    if num_gpus:
         print("[bold green]GPU:[/]")
 
         for i in range(num_gpus):
-            dev_name = trace["gpu"]["start"][i]["device_name"]
-            dev_total = trace["gpu"]["start"][i]["total_memory"]
-            dev_free = trace["gpu"]["start"][i]["free_memory"]
-            at_start = dev_total - dev_free
+            dev_name = run["gpu"][first_gpu_stage][i]["device_name"]
+            dev_total = run["gpu"][first_gpu_stage][i]["total_memory"]
 
-            try:
-                after_tokenizer_loaded = (
-                    trace["gpu"]["after_tokenizer_loaded"][i]["total_memory"]
-                    - trace["gpu"]["after_tokenizer_loaded"][i]["free_memory"]
-                )
-            except IndexError:
-                after_tokenizer_loaded = 0
+            print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
 
-            try:
-                after_tokenization = (
-                    trace["gpu"]["after_tokenization"][i]["total_memory"]
-                    - trace["gpu"]["after_tokenization"][i]["free_memory"]
-                )
-            except IndexError:
-                after_tokenization = 0
+            prev_stage = None
+            for stage in gpu_stages:
+                used = run["gpu"][stage][i]["total_memory"] - run["gpu"][stage][i]["free_memory"]
+                if prev_stage is None:
+                    print(f"  * {stage} : {sizeof_fmt(used)}")
+                else:
+                    print(f"  * {stage} : {delta_fmt(prev_stage, used)}")
+                prev_stage = used
 
-            try:
-                after_model_loaded = (
-                    trace["gpu"]["after_model_loaded"][i]["total_memory"]
-                    - trace["gpu"]["after_model_loaded"][i]["free_memory"]
-                )
-            except IndexError:
-                after_model_loaded = 0
-
-            try:
-                after_model_inference = (
-                    trace["gpu"]["after_model_inference"][i]["total_memory"]
-                    - trace["gpu"]["after_model_inference"][i]["free_memory"]
-                )
-            except IndexError:
-                after_model_inference = 0
-
-            # skip this GPU if it was not influenced by the trace
-            if (
-                len(
-                    {
-                        at_start,
-                        after_tokenizer_loaded,
-                        after_tokenization,
-                        after_model_loaded,
-                        after_model_inference,
-                    }
-                )
-                > 1
-            ):
-                print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
-                print(f"    * start           : {sizeof_fmt(at_start)}")
-                print(f"    * tokenizer loaded: {delta_fmt(at_start, after_tokenizer_loaded)}")
-                print(f"    * tokenization    : {delta_fmt(after_tokenizer_loaded, after_tokenization)}")
-                print(f"    * model loaded    : {delta_fmt(after_tokenization, after_model_loaded)}")
-                print(f"    * model inference : {delta_fmt(after_model_loaded, after_model_inference)}")
-                print()
+            print()
 
     proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
     if proc_execs:
