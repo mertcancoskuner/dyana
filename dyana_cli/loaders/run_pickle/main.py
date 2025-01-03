@@ -12,23 +12,28 @@ def get_peak_rss() -> int:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run an pickle file")
+    parser = argparse.ArgumentParser(description="Run a pickle file")
     parser.add_argument("--pickle", help="Path to pickle file", required=True)
     args = parser.parse_args()
 
     result: dict[str, t.Any] = {
         "ram": {"start": get_peak_rss()},
         "errors": {},
-        "exit_code": None,
+        "exit_code": 0,
     }
 
     if not os.path.exists(args.pickle):
         result["errors"]["pickle"] = "pickle file not found"
+        result["exit_code"] = 1
     else:
         try:
-            ret = pickle.load
-
+            result["ram"]["before_load"] = get_peak_rss()
+            with open(args.pickle, "rb") as f:
+                ret = pickle.load(f)
+            result["ram"]["after_load"] = get_peak_rss()
+            result["stdout"] = str(ret)
         except Exception as e:
             result["errors"]["pickle"] = str(e)
+            result["exit_code"] = 1
 
     print(json.dumps(result))
