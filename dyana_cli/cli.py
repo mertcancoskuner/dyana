@@ -213,7 +213,7 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         print("[bold yellow]Process Executions:[/]")
         for proc_exec in proc_execs:
             cmd_path = [arg["value"] for arg in proc_exec["args"] if arg["name"] == "cmdpath"][0]
-            cmd_argv = [[v for v in arg["value"]] for arg in proc_exec["args"] if arg["name"] == "argv"][0]
+            cmd_argv = [list(arg["value"]) for arg in proc_exec["args"] if arg["name"] == "argv"][0]
             print(f"  * {proc_exec['processName']} -> [bold red]{proc_exec['syscall']}[/] {cmd_path} {cmd_argv}")
         print()
 
