@@ -1,0 +1,5 @@
+args:
+  - name: pickle
+    description: Path to the executable file to run.
+    required: true
+    volume: true
