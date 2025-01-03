@@ -1,5 +1,5 @@
 args:
   - name: pickle
-    description: Path to the executable file to run.
+    description: Path to the python pickle file to deserialize.
     required: true
     volume: true
