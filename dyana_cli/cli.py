@@ -1,5 +1,5 @@
 import pathlib
-import platform
+import platform as platform_pkg
 
 # NOTE: json is too slow
 import cysimdjson
@@ -16,35 +16,26 @@ cli = typer.Typer(
 )
 
 
-@cli.command(help="Profile a model.")
+@cli.command(help="Profile a model.", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def trace(
-    model: pathlib.Path = typer.Option(help="Path to the model to profile."),
+    ctx: typer.Context,
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
-    input: str = typer.Option(help="Input for the model.", default="This is an example sentence."),
+    platform: str | None = typer.Option(help="Platform to use.", default=None),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
-    extra_requirements: str | None = typer.Option(help="Extra requirements to install.", default=None),
 ) -> None:
     # disable GPU on non-Linux systems
-    if not no_gpu and platform.system() != "Linux":
+    if not no_gpu and platform_pkg.system() != "Linux":
         no_gpu = True
 
     allow_gpus = not no_gpu
-    build_args = {"EXTRA_REQUIREMENTS": extra_requirements} if extra_requirements else None
 
     # TODO: for now we only have "auto", figure out more specific loaders
-    loader = Loader(loader, build_args)
+    loader = Loader(loader, platform, ctx.args)
     tracer = Tracer(loader)
 
-    trace = tracer.run_trace(model, input, allow_network, allow_gpus)
-
-    if trace.errors:
-        print(":exclamation: [bold red]errors:[/bold red]")
-        for group, errors in trace.errors.items():
-            for error in errors:
-                print(f"  [b]{group}[/]: {error}")
-        print()
+    trace = tracer.run_trace(allow_network, allow_gpus)
 
     print(f":card_file_box:  saving {len(trace.events)} events to {output}\n")
 
@@ -95,32 +86,30 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
 
     print()
 
-    ram = trace["ram"]
-
-    tot_mem_pressure = max(
-        ram["start"],
-        ram["after_tokenizer_loaded"],
-        ram["after_tokenization"],
-        ram["after_model_loaded"],
-        ram["after_model_inference"],
-    )
+    ram = trace["run"]["ram"]
+    stages = list(ram.keys())
+    last_stage = stages[-1]
+    tot_mem_pressure = max(ram[stage] for stage in stages)
 
     tot_gpu_pressure: int = 0
     num_gpus: int = 0
     if "gpu" in trace and trace["gpu"]:
         num_gpus = len(trace["gpu"]["start"])
         for i in range(num_gpus):
-            usage = (
-                trace["gpu"]["after_model_inference"][i]["total_memory"]
-                - trace["gpu"]["after_model_inference"][i]["free_memory"]
-            )
+            usage = trace["gpu"][last_stage][i]["total_memory"] - trace["gpu"][last_stage][i]["free_memory"]
             tot_gpu_pressure += usage
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
-    if "extra_requirements" in trace:
-        print(f"Extra packages : {trace['extra_requirements']}")
-    print(f"Model path     : [yellow]{trace['model_path']}[/]")
-    print(f"Model input    : [dim]{trace['model_input']}[/]")
+
+    if trace["run"]["build_args"]:
+        print(f"Build args     : {', '.join(f'{k}={v}' for k, v in trace['run']['build_args'].items())}")
+
+    if trace["run"]["arguments"]:
+        print(f"Arguments      : {' '.join(trace['run']['arguments'])}")
+
+    if trace["run"]["volumes"]:
+        print(f"Volumes        : {', '.join(f'{v} ({k})' for k, v in trace['run']['volumes'].items())}")
+
     print(f"Started at     : {trace['started_at']}")
     print(f"Ended at       : {trace['ended_at']}")
     print(f"RAM usage      : [yellow][bold]{sizeof_fmt(tot_mem_pressure)}[/]")
@@ -128,21 +117,33 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
         print(f"GPU vRAM usage : [green][bold]{sizeof_fmt(tot_gpu_pressure)}[/]")
     print(f"Total Events   : {len(trace['events'])}")
 
-    print()
-
-    if trace["errors"]:
+    if trace["run"]["errors"]:
         print("[bold red]Errors:[/bold red]\n")
-        for group, errors in trace["errors"].items():
-            for error in errors:
+        for group, error in trace["run"]["errors"].items():
+            if error:
                 print(f"  * [b]{group}[/]: {error}")
         print()
 
+    if trace["run"]["stdout"] is not None:
+        print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{trace['run']['stdout'][:80].strip()}[/]")
+
+    if trace["run"]["stderr"] is not None:
+        print(f"[bold red]Stderr[/bold red]         : {trace['run']['stderr'][:80].strip()}")
+
+    if trace["run"]["exit_code"] is not None:
+        print(f"[bold blue]Exit code[/bold blue]      : {trace['run']['exit_code']}")
+
+    print()
+
     print("[bold yellow]RAM:[/]")
-    print(f"  * start            : {sizeof_fmt(ram['start'])}")
-    print(f"  * tokenizer loaded : {delta_fmt(ram['start'], ram['after_tokenizer_loaded'])}")
-    print(f"  * tokenization     : {delta_fmt(ram['after_tokenizer_loaded'], ram['after_tokenization'])}")
-    print(f"  * model loaded     : {delta_fmt(ram['after_tokenization'], ram['after_model_loaded'])}")
-    print(f"  * model inference  : {delta_fmt(ram['after_model_loaded'], ram['after_model_inference'])}")
+    prev_stage = None
+    for stage in stages:
+        if prev_stage is None:
+            print(f"  * {stage} : {sizeof_fmt(ram[stage])}")
+        else:
+            print(f"  * {stage} : {delta_fmt(ram[prev_stage], ram[stage])}")
+        prev_stage = stage
+
     print()
 
     if "gpu" in trace and num_gpus:

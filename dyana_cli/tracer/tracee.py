@@ -1,5 +1,4 @@
 import json
-import pathlib
 import platform
 import threading
 import time
@@ -9,20 +8,15 @@ from pydantic import BaseModel
 from rich import print
 
 import dyana_cli.loaders.docker as docker
-from dyana_cli.loaders.loader import GpuUsage, Loader, RamUsage
+from dyana_cli.loaders.loader import Loader, Run
 
 
 class Trace(BaseModel):
     started_at: datetime
     ended_at: datetime
     platform: str
-    extra_requirements: str | None = None
-    model_path: str
-    model_input: str
-    errors: dict[str, list[str]] | None = None
+    run: Run
     events: list[dict] = []
-    ram: RamUsage | None = None
-    gpu: GpuUsage | None = None
 
 
 class Tracer:
@@ -106,7 +100,11 @@ class Tracer:
         while self.container.status in ["created", "running"]:
             # https://github.com/docker/docker-py/issues/2913
             for char in logs:
-                char = char.decode("utf-8")
+                try:
+                    char = char.decode("utf-8")
+                except UnicodeDecodeError:
+                    char = char.decode("utf-8", errors="replace")
+
                 line += char
                 if char == "\n":
                     self._on_tracer_event(line)
@@ -182,39 +180,26 @@ class Tracer:
         print(":eye_in_speech_bubble:  [bold]tracer[/]: stopping ...")
         self.container.stop()
 
-    def run_trace(
-        self, model_path: pathlib.Path, model_input: str, allow_network: bool = False, allow_gpus: bool = True
-    ) -> Trace:
+    def run_trace(self, allow_network: bool = False, allow_gpus: bool = True) -> Trace:
         self._start()
 
         print(":eye_in_speech_bubble:  [bold]tracer[/]: started ...")
 
         started_at = datetime.now()
-        run = self.loader.run(model_path, model_input, allow_network, allow_gpus)
+        run = self.loader.run(allow_network, allow_gpus)
         ended_at = datetime.now()
 
         self._stop()
 
         # TODO: filter out any events from containers different than the one we created
 
-        # consolidate in a single Trace object
-        errors: dict[str, str] = {}
-        for error, message in run.errors.items():
-            if message:
-                errors[error] = [message]
-
         if self.errors:
-            errors["tracer"] = self.errors
+            run.errors["tracer"] = self.errors
 
         return Trace(
             platform=platform.platform(),
-            extra_requirements=self.loader.extra_requirements,
-            model_path=str(model_path.resolve().absolute()),
             started_at=started_at,
             ended_at=ended_at,
-            model_input=model_input,
-            errors=errors if errors else None,
             events=self.trace,
-            ram=run.ram,
-            gpu=run.gpu,
+            run=run,
         )

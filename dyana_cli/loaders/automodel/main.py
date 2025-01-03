@@ -37,18 +37,13 @@ def get_gpu_usage() -> list[dict[str, t.Any]]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Profile model files")
-    parser.add_argument("path", help="Path to HF model directory")
-    parser.add_argument("sentence", help="The input sentence", default="This is an example sentence.")
+    parser.add_argument("--model", help="Path to HF model directory", required=True)
+    parser.add_argument("--input", help="The input sentence", default="This is an example sentence.")
     args = parser.parse_args()
 
-    path: str = os.path.abspath(args.path)
+    path: str = os.path.abspath(args.model)
     inputs: t.Any | None = None
-
-    errors: dict[str, str | None] = {
-        "tokenizer": None,
-        "model": None,
-    }
-
+    errors: dict[str, str] = {}
     ram: dict[str, int] = {"start": get_peak_rss()}
     gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,7 +52,7 @@ if __name__ == "__main__":
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         ram["after_tokenizer_loaded"] = get_peak_rss()
         gpu["after_tokenizer_loaded"] = get_gpu_usage()
-        inputs = tokenizer(args.sentence, return_tensors="pt").to(device)
+        inputs = tokenizer(args.input, return_tensors="pt").to(device)
         ram["after_tokenization"] = get_peak_rss()
         gpu["after_tokenization"] = get_gpu_usage()
     except Exception as e:
@@ -83,7 +78,6 @@ if __name__ == "__main__":
     print(
         json.dumps(
             {
-                "input": args.sentence,
                 "ram": ram,
                 "gpu": gpu,
                 "errors": errors,

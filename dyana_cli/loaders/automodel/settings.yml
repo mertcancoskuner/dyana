@@ -1,0 +1,13 @@
+build_args:
+  extra-requirements: EXTRA_REQUIREMENTS
+
+args:
+  - name: model
+    description: Path to the model to profile.
+    required: true
+    volume: true
+
+  - name: input
+    description: Input for the model.
+    default: This is an example sentence.
+    required: false
