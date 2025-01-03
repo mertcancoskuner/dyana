@@ -238,7 +238,7 @@ def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", d
             else:
                 data = [arg["value"] for arg in event["args"] if arg["name"] == "proto_dns"][0]
                 question_names = [q["name"] for q in data["questions"]]
-                answers = [f'{a["name"]}={a['IP']}' for a in data["answers"]]
+                answers = [f'{a["name"]}={a["IP"]}' for a in data["answers"]]
 
                 if not answers:
                     print(f"  * {event['processName']} | [bold red]dns[/] | question={', '.join(question_names)}")
