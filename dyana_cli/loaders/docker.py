@@ -86,8 +86,6 @@ def run(
     if allow_network:
         network_mode = "bridge"
     else:
-        # TODO: in network mode "none" all dns requests will fail and won't be logged,
-        # find a way to install a local resolver in the container in order to log them
         network_mode = "none"
 
     stdout = client.containers.run(
@@ -128,8 +126,6 @@ def run_detached(
     if allow_network:
         network_mode = "bridge"
     else:
-        # TODO: in network mode "none" all dns requests will fail and won't be logged,
-        # find a way to install a local resolver in the container in order to log them
         network_mode = "none"
 
     return client.containers.run(
