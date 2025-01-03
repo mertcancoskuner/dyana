@@ -108,7 +108,7 @@ class Tracer:
                 try:
                     char = char.decode("utf-8")
                 except UnicodeDecodeError:
-                    char = "x"
+                    char = char.decode("utf-8", errors="replace")
 
                 line += char
                 if char == "\n":
