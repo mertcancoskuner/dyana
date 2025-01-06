@@ -54,6 +54,16 @@ dyana trace --loader pickle --elf /path/to/file.pickle
 dyana trace --loader pickle --elf /path/to/file.pickle --allow-network
 ```
 
+### python
+
+This loader will load a Python file and run it.
+
+#### Example Usage
+
+```bash
+dyana trace --loader python --script /path/to/file.py
+```
+
 ## Requirements
 
 * Docker

@@ -1,0 +1,8 @@
+build_args:
+  extra-requirements: EXTRA_REQUIREMENTS
+
+args:
+  - name: script
+    description: Path to the script to profile.
+    required: true
+    volume: true

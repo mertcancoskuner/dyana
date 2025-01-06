@@ -1,6 +1,7 @@
 /trace.json
 /linux_test_executable
 /malicious.pickle
+/malicious.py
 
 # Testing code
 notebooks/
