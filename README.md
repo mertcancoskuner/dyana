@@ -1,4 +1,4 @@
-Dyana is a sandbox environment based on Docker and [eBPF](https://github.com/aquasecurity/tracee) crafted for loading, running and monitoring machine learning models, ELF files and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and more.
+Dyana is a sandbox environment based on Docker and [eBPF](https://github.com/aquasecurity/tracee) crafted for loading, running and monitoring machine learning models, ELF files, Pickle files and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and more.
 
 ## Loaders
 
@@ -23,24 +23,36 @@ dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example se
 
 <img alt="automodel" src="https://github.com/dreadnode/dyana/blob/main/examples/llama-3.2-1b-linux.png?raw=true"/>
 
-### run_elf
+### elf
 
 This loader will load an ELF file and run it.
 
 #### Example Usage
 
 ```bash
-dyana trace --loader run_elf --elf /path/to/linux_executable
+dyana trace --loader elf --elf /path/to/linux_executable
 
 # depending on the ELF file and the host computer, you might need to specify a different platform:
-dyana trace --loader run_elf --elf /path/to/linux_executable --platform linux/amd64
+dyana trace --loader elf --elf /path/to/linux_executable --platform linux/amd64
 
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
-dyana trace --loader run_elf --elf /path/to/linux_executable --allow-network
+dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 ```
 
-<img alt="run_elf" src="https://github.com/dreadnode/dyana/blob/main/examples/mirai.png?raw=true"/>
+<img alt="elf" src="https://github.com/dreadnode/dyana/blob/main/examples/mirai.png?raw=true"/>
 
+### pickle
+
+This loader will load a Pickle serialized file.
+
+#### Example Usage
+
+```bash
+dyana trace --loader pickle --elf /path/to/file.pickle
+
+# networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+dyana trace --loader pickle --elf /path/to/file.pickle --allow-network
+```
 
 ## Requirements
 
