@@ -1,4 +1,4 @@
-Dyana is a sandbox environment based on Docker and [eBPF](https://github.com/aquasecurity/tracee) crafted for loading, running and monitoring machine learning models, ELF files, Pickle files and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and more.
+Dyana is a sandbox environment based on Docker and [eBPF](https://github.com/aquasecurity/tracee) crafted for loading, running and profiling a wide range of files, including machine learning models, ELFs, Pickle, Javascript and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and more.
 
 ## Loaders
 
@@ -62,6 +62,16 @@ This loader will load a Python file and run it.
 
 ```bash
 dyana trace --loader python --script /path/to/file.py
+```
+
+### js
+
+This loader will load a Javascript file and run it via NodeJS.
+
+#### Example Usage
+
+```bash
+dyana trace --loader js --script /path/to/file.js
 ```
 
 ## Requirements
