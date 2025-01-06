@@ -41,7 +41,7 @@ class Loader:
         if "/" in name or ".." in name:
             raise ValueError("Loader name cannot include a path traversal")
 
-        self.name = name
+        self.image_name = name
         self.timeout = timeout
         self.path = os.path.join(loaders.__path__[0], name)
         self.reader_thread: threading.Thread | None = None
@@ -69,8 +69,9 @@ class Loader:
 
         print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
 
-        self.name = f"dyana-{name}-loader"
-        self.image = docker.build(self.path, self.name, platform=self.platform, build_args=self.build_args)
+        self.name = name
+        self.image_name = f"dyana-{name}-loader"
+        self.image = docker.build(self.path, self.image_name, platform=self.platform, build_args=self.build_args)
 
         if self.platform:
             print(
