@@ -106,7 +106,7 @@ dyana trace ... --allow-network
 Show a summary of the trace file with:
 
 ```bash
-dyana summary --trace trace.json
+dyana summary --trace-path trace.json
 ```
 
 ## License
