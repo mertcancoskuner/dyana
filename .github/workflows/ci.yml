@@ -56,3 +56,6 @@ jobs:
 
       - name: Type check
         run: poetry run mypy --ignore-missing-imports --no-error-summary dyana_cli
+
+      - name: Test
+        run: poetry run pytest dyana_cli
