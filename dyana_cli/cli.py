@@ -34,17 +34,17 @@ def loaders(
     build: bool = typer.Option(help="Build the loaders containers if needed.", default=False),
 ) -> None:
     loaders_path = loaders_pkg.__path__[0]
-    entries = []
+    loaders: list[Loader] = []
     for entry in pathlib.Path(loaders_path).iterdir():
         if entry.is_dir() and not entry.name.startswith("__"):
-            entries.append(Loader(name=entry.name, build=build, timeout=10))
+            loaders.append(Loader(name=entry.name, build=build, timeout=10))
 
     table = Table(box=box.ROUNDED)
     table.add_column("Name", style="cyan")
     table.add_column("Description")
 
-    for entry in sorted(entries, key=lambda x: x.name):
-        table.add_row(entry.name, entry.settings.description)
+    for loader in sorted(loaders, key=lambda x: x.name):
+        table.add_row(loader.name, loader.settings.description if loader.settings else "")
 
     print(table)
 
@@ -68,10 +68,10 @@ def trace(
     if not no_gpu and platform_pkg.system() != "Linux":
         no_gpu = True
 
-    loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args)
-    tracer = Tracer(loader)
+    the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args)
+    the_tracer = Tracer(the_loader)
 
-    trace = tracer.run_trace(allow_network, not no_gpu, allow_volume_write)
+    trace = the_tracer.run_trace(allow_network, not no_gpu, allow_volume_write)
 
     print(f":card_file_box:  saving {len(trace.events)} events to {output}\n")
 
@@ -82,8 +82,8 @@ def trace(
 
 
 @cli.command(help="Show a summary of the trace.")
-def summary(trace: pathlib.Path = typer.Option(help="Path to the trace file.", default="trace.json")) -> None:
-    with open(trace) as f:
+def summary(trace_path: pathlib.Path = typer.Option(help="Path to the trace file.", default="trace.json")) -> None:
+    with open(trace_path) as f:
         raw = f.read()
         # the standard json parser is too slow for this
         parser = cysimdjson.JSONParser()

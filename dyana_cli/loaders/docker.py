@@ -1,8 +1,8 @@
 import pathlib
 import re
 
-import docker  # type: ignore
-from docker.models.images import Image  # type: ignore
+import docker
+from docker.models.images import Image
 from rich import print
 
 try:
@@ -92,7 +92,7 @@ def run_detached(
     network_mode = "bridge" if allow_network else "none"
 
     # by default volumes are read-only
-    volumes = {host: {"bind": guest, "mode": "rw" if allow_volume_write else "ro"} for host, guest in volumes.items()}
+    mounts = {host: {"bind": guest, "mode": "rw" if allow_volume_write else "ro"} for host, guest in volumes.items()}
 
     # this allows us to log dns requests even if the container is in network mode "none"
     dns = ["127.0.0.1"] if not allow_network else None
@@ -103,7 +103,7 @@ def run_detached(
     return client.containers.run(
         image,
         command=command,
-        volumes=volumes,
+        volumes=mounts,
         network_mode=network_mode,
         dns=dns,
         # automatically remove the container after it exits
@@ -125,7 +125,7 @@ def run_privileged_detached(
     command: list[str],
     volumes: dict[str, str],
     entrypoint: str | None = None,
-    environment: dict | None = None,
+    environment: dict[str, str] | None = None,
 ) -> docker.models.containers.Container:
     if client is None:
         raise Exception("Docker not available")

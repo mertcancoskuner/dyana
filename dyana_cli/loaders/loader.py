@@ -4,7 +4,7 @@ import threading
 import time
 from datetime import datetime
 
-import docker as docker_og
+import docker as docker_pkg
 from pydantic import BaseModel
 from pydantic_yaml import parse_yaml_raw_as
 from rich import print
@@ -47,11 +47,12 @@ class Loader:
         self.timeout = timeout
         self.path = os.path.join(loaders.__path__[0], name)
         self.reader_thread: threading.Thread | None = None
-        self.container: docker.models.containers.Container | None = None
+        self.container: docker_pkg.models.containers.Container | None = None
         self.container_id: str | None = None
         self.output: str = ""
         self.platform = platform
         self.settings_path = os.path.join(self.path, "settings.yml")
+        self.settings: LoaderSettings | None = None
         self.build_args: dict[str, str] | None = None
         self.args: list[ParsedArgument] | None = None
 
@@ -83,7 +84,10 @@ class Loader:
             else:
                 print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
 
-    def _reader_thread(self):
+    def _reader_thread(self) -> None:
+        if not self.container:
+            raise Exception("Container not created")
+
         # attach to the container's logs with stream=True to get a generator
         logs = self.container.logs(stream=True, follow=True)
 
@@ -104,6 +108,15 @@ class Loader:
             except Exception:
                 # container is deleted
                 break
+
+    def _create_errored_run(self, error_key: str, error_message: str) -> Run:
+        run = Run()
+        run.loader_name = self.name
+        run.build_platform = self.platform
+        run.build_args = self.build_args
+        run.arguments = [arg.value for arg in self.args] if self.args else None
+        run.errors = {error_key: error_message}
+        return run
 
     def run(self, allow_network: bool = False, allow_gpus: bool = True, allow_volume_write: bool = False) -> Run:
         volumes = {}
@@ -161,14 +174,7 @@ class Loader:
                 if (datetime.now() - started_at).total_seconds() > self.timeout:
                     self.container.kill()
                     print(":popcorn: [bold]loader[/]: [red]timeout reached, killing container[/]")
-                    run = Run()
-                    run.loader_name = self.name
-                    run.build_platform = self.platform
-                    run.build_args = self.build_args
-                    run.arguments = arguments
-                    run.volumes = volumes
-                    run.errors = {"timeout": "timeout reached, killing container"}
-                    return run
+                    return self._create_errored_run("timeout", "timeout reached, killing container")
 
             if not self.output.startswith("{"):
                 idx = self.output.find("{")
@@ -190,7 +196,8 @@ class Loader:
                 print(f"Invalid JSON: [bold red]{self.output}[/]")
                 raise e
 
-        except docker_og.errors.ContainerError as ce:
+        except docker_pkg.errors.ContainerError as ce:
             print(f"\nContainer failed with exit code {ce.exit_status}")
             print("\nContainer output:")
             print(ce.stderr.decode("utf-8"))
+            return self._create_errored_run("container_execution_error", ce.stderr.decode("utf-8"))

@@ -2,8 +2,10 @@ import json
 import platform
 import threading
 import time
+import typing as t
 from datetime import datetime
 
+import docker as docker_pkg
 from pydantic import BaseModel
 from rich import print
 
@@ -16,7 +18,7 @@ class Trace(BaseModel):
     ended_at: datetime
     platform: str
     run: Run
-    events: list[dict] = []
+    events: list[t.Any] = []
 
 
 class Tracer:
@@ -77,7 +79,7 @@ class Tracer:
 
         self.loader = loader
         self.errors: list[str] = []
-        self.trace: list[dict] = []
+        self.trace: list[t.Any] = []
         self.args = [
             "--output",
             "json",
@@ -93,10 +95,13 @@ class Tracer:
             self.args.append(event)
 
         self.reader_thread: threading.Thread | None = None
-        self.container: docker.models.containers.Container | None = None
+        self.container: docker_pkg.models.containers.Container | None = None
         self.ready = False
 
-    def _reader_thread(self):
+    def _reader_thread(self) -> None:
+        if not self.container:
+            raise Exception("Container not created")
+
         # attach to the container's logs with stream=True to get a generator
         logs = self.container.logs(stream=True, follow=True)
         line = ""
@@ -139,7 +144,8 @@ class Tracer:
                     self.ready = True
             else:
                 # other messages
-                print(f":eye_in_speech_bubble:  [bold]tracer[/]: {message['M'].strip()}")
+                # print(f":eye_in_speech_bubble:  [bold]tracer[/]: {message['M'].strip()}")
+                pass
 
         elif "level" in message:
             # other messages
@@ -182,8 +188,9 @@ class Tracer:
             time.sleep(1)
 
     def _stop(self) -> None:
-        print(":eye_in_speech_bubble:  [bold]tracer[/]: stopping ...")
-        self.container.stop()
+        if self.container:
+            print(":eye_in_speech_bubble:  [bold]tracer[/]: stopping ...")
+            self.container.stop()
 
     def run_trace(
         self, allow_network: bool = False, allow_gpus: bool = True, allow_volume_write: bool = False
@@ -199,13 +206,19 @@ class Tracer:
         self._stop()
 
         if self.errors:
-            run.errors["tracer"] = self.errors
+            if not run.errors:
+                run.errors = {}
+            run.errors["tracer"] = ", ".join(self.errors)
 
         return Trace(
             platform=platform.platform(),
             started_at=started_at,
             ended_at=ended_at,
             # filter out any events from containers different than the one we created
-            events=[event for event in self.trace if event["containerId"].lower() == self.loader.container_id.lower()],
+            events=[
+                event
+                for event in self.trace
+                if (event["containerId"] or "").lower() == (self.loader.container_id or "").lower()
+            ],
             run=run,
         )

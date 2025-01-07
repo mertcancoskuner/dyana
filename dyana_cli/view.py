@@ -1,10 +1,12 @@
+import typing as t
+
 from rich import print
 
 from dyana_cli.tracer.tracee import Tracer
 
 
 # https://stackoverflow.com/questions/1094841/get-a-human-readable-version-of-a-file-size
-def sizeof_fmt(num, suffix="B"):
+def sizeof_fmt(num: float, suffix: str = "B") -> str:
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
         if abs(num) < 1024.0:
             return f"{num:3.1f}{unit}{suffix}"
@@ -32,7 +34,7 @@ def severity_fmt(level: int) -> str:
         return "[bold dim]no severity[/]"
 
 
-def view_header(trace):
+def view_header(trace: dict[str, t.Any]) -> None:
     run = trace["run"]
 
     print(f"Platform       : [magenta]{trace['platform']}[/]")
@@ -71,7 +73,7 @@ def view_header(trace):
     print()
 
 
-def view_ram(run):
+def view_ram(run: dict[str, t.Any]) -> None:
     ram = run["ram"]
     if ram:
         print("[bold yellow]RAM:[/]")
@@ -87,7 +89,7 @@ def view_ram(run):
         print()
 
 
-def view_gpus(run):
+def view_gpus(run: dict[str, t.Any]) -> None:
     if run["gpu"]:
         gpu_stages = list(run["gpu"].keys())
         first_gpu_stage = gpu_stages[0]
@@ -113,7 +115,7 @@ def view_gpus(run):
                 print()
 
 
-def view_process_executions(trace):
+def view_process_executions(trace: dict[str, t.Any]) -> None:
     proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
     if proc_execs:
         print("[bold yellow]Process Executions:[/]")
@@ -124,7 +126,7 @@ def view_process_executions(trace):
         print()
 
 
-def view_network_events(trace):
+def view_network_events(trace: dict[str, t.Any]) -> None:
     connects = [event for event in trace["events"] if event["eventName"] == "security_socket_connect"]
     dns_queries = [event for event in trace["events"] if event["eventName"] == "net_packet_dns"]
     if connects or dns_queries:
@@ -156,7 +158,7 @@ def view_network_events(trace):
         print()
 
 
-def view_disk_events(trace):
+def view_disk_events(trace: dict[str, t.Any]) -> None:
     opens = [event for event in trace["events"] if event["eventName"] == "security_file_open"]
     unique_files = set()
     any_file = False
@@ -203,7 +205,7 @@ def view_disk_events(trace):
         print()
 
 
-def view_security_events(trace):
+def view_security_events(trace: dict[str, t.Any]) -> None:
     security_events = {event for event in trace["events"] if event["eventName"] in Tracer.SECURITY_EVENTS}
     if security_events:
         unique = {}
