@@ -56,6 +56,8 @@ dyana trace --loader pickle --pickle /path/to/file.pickle
 dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
 
+![pickle](./examples/malicious-pickle-on-macos.png)
+
 ### python
 
 This loader will load a Python file and run it.
