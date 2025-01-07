@@ -39,7 +39,7 @@ jobs:
         run: |
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
           POETRY_VERSION=$(poetry version -s)
-          INIT_VERSION=$(python -c "import dreadnode_dyana; print(dreadnode_dyana.__version__)")
+          INIT_VERSION=$(python -c "import dyana_cli; print(dyana_cli.__version__)")
 
           if ! [[ $TAG_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid tag format: $TAG_VERSION. Must be vX.X.X"
@@ -62,39 +62,3 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@15c56dba361d8335944d31a2ecd17d700fc7bcbc
-
-  publish-docker:
-    name: Publish Docker
-    environment: protected
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set Docker tags
-        id: tags
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "tags=dreadnode/dyana:latest,dreadnode/dyana:$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Build and push
-        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
