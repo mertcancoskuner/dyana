@@ -1,4 +1,75 @@
+<p align="center">
+    <img
+    src="https://d1lppblt9t2x15.cloudfront.net/logos/5714928f3cdc09503751580cffbe8d02.png"
+    alt="Logo"
+    align="center"
+    width="144px"
+    height="144px"
+    />
+</p>
+
+<h4 align="center">
+    <a href="https://pypi.org/project/dyana/" target="_blank">
+        <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/dyana">
+        <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/dyana">
+    </a>
+    <a href="https://github.com/dreadnode/dyana/blob/main/LICENSE" target="_blank">
+        <img alt="GitHub License" src="https://img.shields.io/github/license/dreadnode/dyana">
+    </a>
+    <a href="https://github.com/dreadnode/dyana/actions/workflows/ci.yml">
+        <img alt="GitHub Actions Workflow Status" src="https://github.com/dreadnode/dyana/actions/workflows/ci.yml/badge.svg">
+    </a>
+</h4>
+
+</br>
+
 Dyana is a sandbox environment using Docker and [Tracee](https://github.com/aquasecurity/tracee) for loading, running and profiling a wide range of files, including machine learning models, ELF executables, Pickle serialized files, Javascripts and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and security related events.
+
+## Installation
+
+The requiremets are:
+
+* Docker
+* Python 3.10+ with PIP.
+* Optional: a GNU/Linux machine with CUDA for GPU memory tracing support.
+
+Install with:
+
+```bash
+pip install dyana
+```
+
+To upgrade to the latest version, run:
+
+```bash
+pip install --upgrade dyana
+```
+
+To uninstall, run:
+
+```bash
+pip uninstall dyana
+```
+
+## Usage
+
+Create a trace file for a given loader with:
+
+```bash
+dyana trace --loader automodel ... --output trace.json
+```
+
+**By default, Dyana will not allow network access to the model container.** If you need to allow it, you can pass the `--allow-network` flag:
+
+```bash
+dyana trace ... --allow-network
+```
+
+Show a summary of the trace file with:
+
+```bash
+dyana summary --trace-path trace.json
+```
 
 ## Loaders
 
@@ -87,39 +158,6 @@ dyana trace --loader js --script /path/to/file.js --allow-network
 ```
 
 ![js](./examples/js-hello-on-macos.png)
-
-## Requirements
-
-* Docker
-* [Poetry](https://python-poetry.org/)
-* Optional: a GNU/Linux machine with CUDA for GPU memory tracing support.
-
-## Usage
-
-Activate the Poetry shell:
-
-```bash
-cd /path/to/dyana
-poetry install && poetry shell
-```
-
-Create a trace file for a given loader with:
-
-```bash
-dyana trace --loader automodel ... --output trace.json
-```
-
-**By default, Dyana will not allow network access to the model container.** If you need to allow it, you can pass the `--allow-network` flag:
-
-```bash
-dyana trace ... --allow-network
-```
-
-Show a summary of the trace file with:
-
-```bash
-dyana summary --trace-path trace.json
-```
 
 ## License
 
