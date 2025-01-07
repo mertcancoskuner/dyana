@@ -27,10 +27,10 @@ Dyana is a sandbox environment using Docker and [Tracee](https://github.com/aqua
 
 ## Installation
 
-The requiremets are:
+Requirements:
 
-* Docker
 * Python 3.10+ with PIP.
+* Docker
 * Optional: a GNU/Linux machine with CUDA for GPU memory tracing support.
 
 Install with:
