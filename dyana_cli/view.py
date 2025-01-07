@@ -171,8 +171,6 @@ def view_disk_events(trace):
         "/etc/": 0,
     }
 
-    # py_packages = {}
-
     for file in opens:
         file_path = [arg["value"] for arg in file["args"] if arg["name"] == "syscall_pathname"][0]
         if not file_path:
@@ -191,24 +189,6 @@ def view_disk_events(trace):
         if not is_special_path:
             unique_files.add(file_path)
 
-        """
-        TODO: ! WIP ! generalize this type of stuff os a policy, collect SBoM for other loaders
-
-        if "/python" in file_path and "/site-packages/" in file_path:
-            # Extract the first folder after site-packages/
-            package_name = file_path.split("/site-packages/")[1].split("/")[0]
-            package_version = None
-
-            if package_name.endswith(".dist-info"):
-                parts = package_name.split("-", 1)
-                package_name = parts[0]
-                package_version = parts[1].replace(".dist-info", "")
-
-            if package_name != "__pycache__":
-                if package_name not in py_packages:
-                    py_packages[package_name] = package_version
-        """
-
     if any_file:
         print("[bold yellow]File Accesses:[/]")
         for file_path in sorted(unique_files):
@@ -221,8 +201,6 @@ def view_disk_events(trace):
                     print(f"  * {count} accesses to {path}[dim]*[/]")
 
         print()
-
-    # print(py_packages)
 
 
 def view_security_events(trace):
