@@ -1,8 +1,11 @@
 [tool.poetry]
+authors = [
+    "Simone Margaritelli <simone@dreadnode.io>",
+    "Ads Dawson <ads@dreadnode.io>",
+]
 name = "dyana-cli"
 version = "0.0.1"
-description = "Blackbox model profiler."
-authors = ["Simone Margaritelli <simone@dreadnode.io>"]
+description = "A sandbox environment based on Docker and eBPF to load and profile a wide range of file types."
 license = "MIT"
 repository = "https://github.com/dreadnode/dyana"
 readme = "README.md"

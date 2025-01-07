@@ -206,10 +206,21 @@ def view_disk_events(trace):
 def view_security_events(trace):
     security_events = {event for event in trace["events"] if event["eventName"] in Tracer.SECURITY_EVENTS}
     if security_events:
-        print("[bold red]Security Events:[/]")
-        unique = {event["metadata"]["Properties"]["signatureName"]: event["metadata"] for event in security_events}
+        unique = {}
+        for event in security_events:
+            if "metadata" in event:
+                unique[event["metadata"]["Properties"]["signatureName"]] = event["metadata"]
+            else:
+                unique[event["eventName"]] = event
+
         for signature, event in unique.items():
-            category = event["Properties"]["Category"]
-            severity_level = event["Properties"]["Severity"]
+            if "Properties" in event:
+                category = event["Properties"]["Category"]
+                severity_level = event["Properties"]["Severity"]
+            else:
+                category = "misc"
+                severity_level = 0
+
             print(f"  * {signature} ([dim]{category}[/], {severity_fmt(severity_level)})")
+
         print()
