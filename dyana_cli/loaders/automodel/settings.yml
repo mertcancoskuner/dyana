@@ -1,3 +1,5 @@
+description: Loads and profiles machine learning models compatible with AutoModel and AutoTokenizer.
+
 build_args:
   extra-requirements: EXTRA_REQUIREMENTS
 

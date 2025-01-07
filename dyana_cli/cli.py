@@ -4,8 +4,10 @@ import platform as platform_pkg
 # NOTE: json is too slow
 import cysimdjson
 import typer
-from rich import print
+from rich import box, print
+from rich.table import Table
 
+import dyana_cli.loaders as loaders_pkg
 from dyana_cli.loaders.loader import Loader
 from dyana_cli.tracer.tracee import Tracer
 from dyana_cli.view import (
@@ -25,7 +27,33 @@ cli = typer.Typer(
 )
 
 
-@cli.command(help="Profile.", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+@cli.command(
+    help="Show the available loaders.",
+)
+def loaders(
+    build: bool = typer.Option(help="Build the loaders containers if needed.", default=False),
+) -> None:
+    loaders_path = loaders_pkg.__path__[0]
+    entries = []
+    for entry in pathlib.Path(loaders_path).iterdir():
+        if entry.is_dir() and not entry.name.startswith("__"):
+            entries.append(Loader(name=entry.name, build=build, timeout=10))
+
+    table = Table(box=box.ROUNDED)
+    table.add_column("Name", style="cyan")
+    table.add_column("Description")
+
+    for entry in sorted(entries, key=lambda x: x.name):
+        table.add_row(entry.name, entry.settings.description)
+
+    print(table)
+
+
+@cli.command(
+    help="Profiles the target file via the selected loader.",
+    # we need to allow extra arguments because the loader might have its own arguments
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
 def trace(
     ctx: typer.Context,
     loader: str = typer.Option(help="Loader to use.", default="automodel"),

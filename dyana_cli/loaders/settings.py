@@ -16,6 +16,7 @@ class ParsedArgument(BaseModel):
 
 
 class LoaderSettings(BaseModel):
+    description: str
     build_args: dict[str, str] | None = None
     args: list[LoaderArgument] | None = None
 

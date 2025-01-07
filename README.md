@@ -4,6 +4,8 @@ Dyana is a sandbox environment using Docker and [Tracee](https://github.com/aqua
 
 Dyana provides a set of loaders for different types of files, each loader has a dedicated set of arguments and will be executed in an isolated, offline by default container.
 
+To see the available loaders and their scriptions, run `dyana loaders`.
+
 ### automodel
 
 The default loader for machine learning models. It will load any model that is compatible with [AutoModel and AutoTokenizer](https://huggingface.co/transformers/v3.0.2/model_doc/auto.html).

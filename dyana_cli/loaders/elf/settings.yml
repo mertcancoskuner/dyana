@@ -1,3 +1,5 @@
+description: Loads and profiles ELF executable files.
+
 args:
   - name: elf
     description: Path to the executable file to run.

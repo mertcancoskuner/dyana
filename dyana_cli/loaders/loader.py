@@ -36,7 +36,9 @@ class Run(BaseModel):
 
 
 class Loader:
-    def __init__(self, name: str, timeout: int, platform: str | None, args: list[str] | None = None):
+    def __init__(
+        self, name: str, timeout: int, build: bool = True, platform: str | None = None, args: list[str] | None = None
+    ):
         # make sure that name does not include a path traversal
         if "/" in name or ".." in name:
             raise ValueError("Loader name cannot include a path traversal")
@@ -56,8 +58,9 @@ class Loader:
         if os.path.exists(self.settings_path):
             with open(self.settings_path) as f:
                 self.settings = parse_yaml_raw_as(LoaderSettings, f.read())
-                self.build_args = self.settings.parse_build_args(args)
-                self.args = self.settings.parse_args(args)
+                if args:
+                    self.build_args = self.settings.parse_build_args(args)
+                    self.args = self.settings.parse_args(args)
         else:
             self.settings = None
 
@@ -67,18 +70,18 @@ class Loader:
         elif not os.path.isfile(self.dockerfile):
             raise ValueError(f"Loader {name} does not contain a Dockerfile")
 
-        print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
-
         self.name = name
         self.image_name = f"dyana-{name}-loader"
-        self.image = docker.build(self.path, self.image_name, platform=self.platform, build_args=self.build_args)
 
-        if self.platform:
-            print(
-                f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/] ({self.platform})"
-            )
-        else:
-            print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
+        if build:
+            print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
+            self.image = docker.build(self.path, self.image_name, platform=self.platform, build_args=self.build_args)
+            if self.platform:
+                print(
+                    f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/] ({self.platform})"
+                )
+            else:
+                print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
 
     def _reader_thread(self):
         # attach to the container's logs with stream=True to get a generator
