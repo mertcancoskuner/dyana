@@ -77,68 +77,35 @@ def pull(image: str) -> Image:
     return client.images.pull(image)
 
 
-def run(
-    image: str, command: list[str], volumes: dict[str, str], allow_network: bool = False, allow_gpus: bool = True
-) -> str:
-    if client is None:
-        raise Exception("Docker not available")
-
-    if allow_network:
-        network_mode = "bridge"
-    else:
-        network_mode = "none"
-
-    stdout = client.containers.run(
-        image,
-        command=command,
-        volumes={
-            # TODO: consider read-only
-            host: {"bind": guest, "mode": "rw"}
-            for host, guest in volumes.items()
-        },
-        network_mode=network_mode,
-        # this allow us to log dns requests even if the container is in network mode "none"
-        dns=["127.0.0.1"] if not allow_network else None,
-        # automatically remove the container after it exits
-        remove=True,
-        # allocate a pseudo-TTY
-        tty=True,
-        # keep STDIN open
-        stdin_open=True,
-        stdout=True,
-        stderr=True,
-        # block until container exits
-        detach=False,
-        # enable GPUs
-        device_requests=[docker.types.DeviceRequest(device_ids=["all"], capabilities=[["gpu"]])]
-        if allow_gpus
-        else None,
-    )
-    return stdout.decode("utf-8")
-
-
 def run_detached(
-    image: str, command: list[str], volumes: dict[str, str], allow_network: bool = False, allow_gpus: bool = True
+    image: str,
+    command: list[str],
+    volumes: dict[str, str],
+    allow_network: bool = False,
+    allow_gpus: bool = True,
+    allow_volume_write: bool = False,
 ) -> docker.models.containers.Container:
     if client is None:
         raise Exception("Docker not available")
 
-    if allow_network:
-        network_mode = "bridge"
-    else:
-        network_mode = "none"
+    # by default network is disabled
+    network_mode = "bridge" if allow_network else "none"
+
+    # by default volumes are read-only
+    volumes = {host: {"bind": guest, "mode": "rw" if allow_volume_write else "ro"} for host, guest in volumes.items()}
+
+    # this allows us to log dns requests even if the container is in network mode "none"
+    dns = ["127.0.0.1"] if not allow_network else None
+
+    # enable GPUs
+    device_requests = [docker.types.DeviceRequest(device_ids=["all"], capabilities=[["gpu"]])] if allow_gpus else None
 
     return client.containers.run(
         image,
         command=command,
-        volumes={
-            # TODO: consider read-only
-            host: {"bind": guest, "mode": "rw"}
-            for host, guest in volumes.items()
-        },
+        volumes=volumes,
         network_mode=network_mode,
-        # this allow us to log dns requests even if the container is in network mode "none"
-        dns=["127.0.0.1"] if not allow_network else None,
+        dns=dns,
         # automatically remove the container after it exits
         remove=True,
         # allocate a pseudo-TTY
@@ -149,10 +116,7 @@ def run_detached(
         stderr=True,
         # detach
         detach=True,
-        # enable GPUs
-        device_requests=[docker.types.DeviceRequest(device_ids=["all"], capabilities=[["gpu"]])]
-        if allow_gpus
-        else None,
+        device_requests=device_requests,
     )
 
 
@@ -169,11 +133,7 @@ def run_privileged_detached(
     return client.containers.run(
         image,
         command=command,
-        volumes={
-            # TODO: consider read-only
-            host: {"bind": guest, "mode": "rw"}
-            for host, guest in volumes.items()
-        },
+        volumes={host: {"bind": guest, "mode": "rw"} for host, guest in volumes.items()},
         network_mode="none",
         pid_mode="host",
         cgroupns="host",

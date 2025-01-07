@@ -102,7 +102,7 @@ class Loader:
                 # container is deleted
                 break
 
-    def run(self, allow_network: bool = False, allow_gpus: bool = True) -> Run:
+    def run(self, allow_network: bool = False, allow_gpus: bool = True, allow_volume_write: bool = False) -> Run:
         volumes = {}
         arguments = []
 
@@ -128,6 +128,9 @@ class Loader:
                 ":popcorn: [bold]loader[/]: [yellow]warning: allowing bridged network access to the model container[/]"
             )
 
+        if allow_volume_write:
+            print(":popcorn: [bold]loader[/]: [yellow]warning: allowing volume write to the model container[/]")
+
         if arguments:
             print(f":popcorn: [bold]loader[/]: executing with arguments [dim]{arguments}[/] ...")
         else:
@@ -135,7 +138,9 @@ class Loader:
 
         try:
             self.output = ""
-            self.container = docker.run_detached(self.image, arguments, volumes, allow_network, allow_gpus)
+            self.container = docker.run_detached(
+                self.image, arguments, volumes, allow_network, allow_gpus, allow_volume_write
+            )
             self.container_id = self.container.id
             self.reader_thread = threading.Thread(target=self._reader_thread)
             self.reader_thread.start()

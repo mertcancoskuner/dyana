@@ -179,13 +179,15 @@ class Tracer:
         print(":eye_in_speech_bubble:  [bold]tracer[/]: stopping ...")
         self.container.stop()
 
-    def run_trace(self, allow_network: bool = False, allow_gpus: bool = True) -> Trace:
+    def run_trace(
+        self, allow_network: bool = False, allow_gpus: bool = True, allow_volume_write: bool = False
+    ) -> Trace:
         self._start()
 
         print(":eye_in_speech_bubble:  [bold]tracer[/]: started ...")
 
         started_at = datetime.now()
-        run = self.loader.run(allow_network, allow_gpus)
+        run = self.loader.run(allow_network, allow_gpus, allow_volume_write)
         ended_at = datetime.now()
 
         self._stop()
