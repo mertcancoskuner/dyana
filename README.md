@@ -66,7 +66,12 @@ This loader will load a Python file and run it.
 
 ```bash
 dyana trace --loader python --script /path/to/file.py
+
+# networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+dyana trace --loader python --script /path/to/file.py --allow-network
 ```
+
+![python](./examples/python-hello-on-macos.png)
 
 ### js
 
@@ -76,7 +81,12 @@ This loader will load a Javascript file and run it via NodeJS.
 
 ```bash
 dyana trace --loader js --script /path/to/file.js
+
+# networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+dyana trace --loader js --script /path/to/file.js --allow-network
 ```
+
+![js](./examples/js-hello-on-macos.png)
 
 ## Requirements
 
