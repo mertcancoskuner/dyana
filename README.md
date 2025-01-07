@@ -50,11 +50,13 @@ This loader will load a Pickle serialized file.
 #### Example Usage
 
 ```bash
-dyana trace --loader pickle --elf /path/to/file.pickle
+dyana trace --loader pickle --pickle /path/to/file.pickle
 
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
-dyana trace --loader pickle --elf /path/to/file.pickle --allow-network
+dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
+
+![pickle](./examples/malicious-pickle-on-macos.png)
 
 ### python
 
