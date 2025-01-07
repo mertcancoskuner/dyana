@@ -117,6 +117,19 @@ def run_detached(
         # detach
         detach=True,
         device_requests=device_requests,
+        security_opt=[
+            "no-new-privileges",
+            "seccomp=unconfined",
+        ],
+        cap_drop=["ALL"],
+        tmpfs={"/tmp": "size=100m,noexec"},
+        pids_limit=100,
+        ulimits=[
+            docker.types.Ulimit(name="nofile", soft=1024, hard=1024),
+            docker.types.Ulimit(name="nproc", soft=100, hard=100),
+        ],
+        userns_mode="host",
+        ipc_mode="none",
     )
 
 
