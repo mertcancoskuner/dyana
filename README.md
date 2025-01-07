@@ -25,13 +25,13 @@
 
 Dyana is a sandbox environment using Docker and [Tracee](https://github.com/aquasecurity/tracee) for loading, running and profiling a wide range of files, including machine learning models, ELF executables, Pickle serialized files, Javascripts and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and security related events.
 
-## Installation
-
-Requirements:
+## Requirements
 
 * Python 3.10+ with PIP.
 * Docker
 * Optional: a GNU/Linux machine with CUDA for GPU memory tracing support.
+
+## Installation
 
 Install with:
 
