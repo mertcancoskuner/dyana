@@ -1,8 +1,8 @@
-from datetime import datetime
 import os
 import pathlib
 import threading
 import time
+from datetime import datetime
 
 import docker as docker_og
 from pydantic import BaseModel
@@ -101,7 +101,7 @@ class Loader:
             try:
                 # refresh container status
                 self.container.reload()
-            except:
+            except Exception:
                 # container is deleted
                 break
 
@@ -154,7 +154,7 @@ class Loader:
                 try:
                     # refresh container status
                     self.container.reload()
-                except:
+                except Exception:
                     # container is deleted
                     break
 

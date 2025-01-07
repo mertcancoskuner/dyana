@@ -117,7 +117,7 @@ class Tracer:
             try:
                 # refresh container status
                 self.container.reload()
-            except:
+            except Exception:
                 # container is deleted
                 break
 
