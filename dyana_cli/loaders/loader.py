@@ -9,8 +9,8 @@ from pydantic import BaseModel
 from pydantic_yaml import parse_yaml_raw_as
 from rich import print
 
+import dyana_cli.docker as docker
 import dyana_cli.loaders as loaders
-import dyana_cli.loaders.docker as docker
 from dyana_cli.loaders.settings import LoaderSettings, ParsedArgument
 
 

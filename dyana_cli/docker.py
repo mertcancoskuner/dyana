@@ -100,6 +100,7 @@ def run_detached(
     # enable GPUs
     device_requests = [docker.types.DeviceRequest(device_ids=["all"], capabilities=[["gpu"]])] if allow_gpus else None
 
+    # TODO: implement new command line arguments for limits such as : mem_limit="16g", cpu_quota=400000,
     return client.containers.run(
         image,
         command=command,

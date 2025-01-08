@@ -9,7 +9,7 @@ import docker as docker_pkg
 from pydantic import BaseModel
 from rich import print
 
-import dyana_cli.loaders.docker as docker
+import dyana_cli.docker as docker
 from dyana_cli.loaders.loader import Loader, Run
 
 
