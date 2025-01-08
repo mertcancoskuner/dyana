@@ -128,7 +128,6 @@ def run_detached(
             docker.types.Ulimit(name="nofile", soft=1024, hard=1024),
             docker.types.Ulimit(name="nproc", soft=100, hard=100),
         ],
-        userns_mode="host",
         ipc_mode="none",
     )
 
