@@ -37,7 +37,13 @@ class Run(BaseModel):
 
 class Loader:
     def __init__(
-        self, name: str, timeout: int, build: bool = True, platform: str | None = None, args: list[str] | None = None
+        self,
+        name: str,
+        timeout: int,
+        build: bool = True,
+        platform: str | None = None,
+        args: list[str] | None = None,
+        verbose: bool = False,
     ):
         # make sure that name does not include a path traversal
         if "/" in name or ".." in name:
@@ -76,7 +82,9 @@ class Loader:
 
         if build:
             print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
-            self.image = docker.build(self.path, self.image_name, platform=self.platform, build_args=self.build_args)
+            self.image = docker.build(
+                self.path, self.image_name, platform=self.platform, build_args=self.build_args, verbose=verbose
+            )
             if self.platform:
                 print(
                     f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/] ({self.platform})"

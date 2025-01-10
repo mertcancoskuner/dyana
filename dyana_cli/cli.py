@@ -63,6 +63,7 @@ def trace(
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
     allow_volume_write: bool = typer.Option(help="Mount volumes as read-write.", default=False),
+    verbose: bool = typer.Option(help="Verbose mode.", default=False),
 ) -> None:
     # disable GPU on non-Linux systems
     if not no_gpu and platform_pkg.system() != "Linux":

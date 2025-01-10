@@ -34,6 +34,7 @@ def build(
     platform: str | None = None,
     build_args: dict[str, str] | None = None,
     force_rebuild: bool = False,
+    verbose: bool = False,
 ) -> Image:
     if client is None:
         raise Exception("Docker not available")
@@ -55,12 +56,12 @@ def build(
         # remove intermediate containers
         rm=True,
     ):
-        # TODO: find a way to be less verbose when using cached images
         if "error" in item:
             print()
             raise Exception(item["error"])
         elif "stream" in item:
-            print("[dim]" + item["stream"].strip() + "[/]")
+            if verbose:
+                print("[dim]" + item["stream"].strip() + "[/]")
         elif "aux" in item:
             id = item["aux"].get("ID")
 
