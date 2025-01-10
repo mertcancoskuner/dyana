@@ -69,7 +69,7 @@ def trace(
     if not no_gpu and platform_pkg.system() != "Linux":
         no_gpu = True
 
-    the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args)
+    the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose)
     the_tracer = Tracer(the_loader)
 
     trace = the_tracer.run_trace(allow_network, not no_gpu, allow_volume_write)
