@@ -94,7 +94,7 @@ dyana trace --model /path/to/model --input "This is an example sentence."
 dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example sentence." --extra-requirements "protobuf fugashi ipadic"
 ```
 
-<img alt="automodel" src="https://github.com/dreadnode/dyana/blob/main/examples/llama-3.2-1b-linux.png?raw=true"/>
+<img alt="automodel" src="https://github.com/dreadnode/dyana/blob/main/examples/malicious.llama-3.2-1b-linux.png?raw=true"/>
 
 ### elf
 
