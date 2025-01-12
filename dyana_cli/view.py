@@ -95,24 +95,40 @@ def view_gpus(run: dict[str, t.Any]) -> None:
         first_gpu_stage = gpu_stages[0]
         num_gpus = len(run["gpu"][first_gpu_stage])
         if num_gpus:
-            print("[bold green]GPU:[/]")
-
+            # check for any change in memory usage for GPUs
+            changes = []
             for i in range(num_gpus):
-                dev_name = run["gpu"][first_gpu_stage][i]["device_name"]
-                dev_total = run["gpu"][first_gpu_stage][i]["total_memory"]
-
-                print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
-
-                prev_stage = None
+                prev = None
+                change = False
                 for stage in gpu_stages:
-                    used = run["gpu"][stage][i]["total_memory"] - run["gpu"][stage][i]["free_memory"]
-                    if prev_stage is None:
-                        print(f"  * {stage} : {sizeof_fmt(used)}")
-                    else:
-                        print(f"  * {stage} : {delta_fmt(prev_stage, used)}")
-                    prev_stage = used
+                    if prev is not None:
+                        if run["gpu"][stage][i]["free_memory"] != prev:
+                            change = True
+                            break
+                    prev = run["gpu"][stage][i]["free_memory"]
+                changes.append(change)
 
-                print()
+            if any(changes):
+                print("[bold green]GPU:[/]")
+                for i in range(num_gpus):
+                    if not changes[i]:
+                        continue
+
+                    dev_name = run["gpu"][first_gpu_stage][i]["device_name"]
+                    dev_total = run["gpu"][first_gpu_stage][i]["total_memory"]
+
+                    print(f"  [green]{dev_name}[/] [dim]|[/] {sizeof_fmt(dev_total)}")
+
+                    prev_stage = None
+                    for stage in gpu_stages:
+                        used = run["gpu"][stage][i]["total_memory"] - run["gpu"][stage][i]["free_memory"]
+                        if prev_stage is None:
+                            print(f"  * {stage} : {sizeof_fmt(used)}")
+                        else:
+                            print(f"  * {stage} : {delta_fmt(prev_stage, used)}")
+                        prev_stage = used
+
+                    print()
 
 
 def view_process_executions(trace: dict[str, t.Any]) -> None:
