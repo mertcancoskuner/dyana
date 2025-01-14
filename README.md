@@ -127,7 +127,7 @@ dyana trace --loader pickle --pickle /path/to/file.pickle
 dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
 
-![pickle](./examples/malicious-pickle-on-macos.png)
+<img alt="pickle" src="https://github.com/dreadnode/dyana/blob/main/examples/malicious-pickle-on-macos.png?raw=true"/>
 
 ### python
 
@@ -142,7 +142,7 @@ dyana trace --loader python --script /path/to/file.py
 dyana trace --loader python --script /path/to/file.py --allow-network
 ```
 
-![python](./examples/python-hello-on-macos.png)
+<img alt="python" src="https://github.com/dreadnode/dyana/blob/main/examples/python-hello-on-macos.png?raw=true"/>
 
 ### js
 
@@ -157,7 +157,7 @@ dyana trace --loader js --script /path/to/file.js
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
 
-![js](./examples/js-hello-on-macos.png)
+<img alt="js" src="https://github.com/dreadnode/dyana/blob/main/examples/js-hello-on-macos.png?raw=true"/>
 
 ## License
 
