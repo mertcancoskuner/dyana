@@ -3,7 +3,7 @@ authors = [
     "Simone Margaritelli <simone@dreadnode.io>",
     "Ads Dawson <ads@dreadnode.io>",
 ]
-name = "dyana-cli"
+name = "dyana"
 version = "0.0.1"
 description = "A sandbox environment based on Docker and eBPF to load and profile a wide range of file types."
 license = "MIT"
