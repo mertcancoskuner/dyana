@@ -9,9 +9,9 @@ from pydantic import BaseModel
 from pydantic_yaml import parse_yaml_raw_as
 from rich import print
 
-import dyana_cli.docker as docker
-import dyana_cli.loaders as loaders
-from dyana_cli.loaders.settings import LoaderSettings, ParsedArgument
+import dyana.docker as docker
+import dyana.loaders as loaders
+from dyana.loaders.settings import LoaderSettings, ParsedArgument
 
 
 class GpuDeviceUsage(BaseModel):

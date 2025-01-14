@@ -7,10 +7,10 @@ import typer
 from rich import box, print
 from rich.table import Table
 
-import dyana_cli.loaders as loaders_pkg
-from dyana_cli.loaders.loader import Loader
-from dyana_cli.tracer.tracee import Tracer
-from dyana_cli.view import (
+import dyana.loaders as loaders_pkg
+from dyana.loaders.loader import Loader
+from dyana.tracer.tracee import Tracer
+from dyana.view import (
     view_disk_events,
     view_gpus,
     view_header,

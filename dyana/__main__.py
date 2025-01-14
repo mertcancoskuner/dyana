@@ -1,4 +1,4 @@
-from dyana_cli.cli import cli
+from dyana.cli import cli
 
 
 def run() -> None:

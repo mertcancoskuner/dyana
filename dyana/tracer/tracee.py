@@ -9,8 +9,8 @@ import docker as docker_pkg
 from pydantic import BaseModel
 from rich import print
 
-import dyana_cli.docker as docker
-from dyana_cli.loaders.loader import Loader, Run
+import dyana.docker as docker
+from dyana.loaders.loader import Loader, Run
 
 
 class Trace(BaseModel):

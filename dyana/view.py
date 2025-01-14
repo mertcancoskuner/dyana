@@ -2,7 +2,7 @@ import typing as t
 
 from rich import print
 
-from dyana_cli.tracer.tracee import Tracer
+from dyana.tracer.tracee import Tracer
 
 
 # https://stackoverflow.com/questions/1094841/get-a-human-readable-version-of-a-file-size

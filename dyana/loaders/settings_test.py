@@ -1,6 +1,6 @@
 import pytest
 
-from dyana_cli.loaders.settings import LoaderArgument, LoaderSettings, ParsedArgument
+from dyana.loaders.settings import LoaderArgument, LoaderSettings, ParsedArgument
 
 
 def test_parse_build_args() -> None:

@@ -25,6 +25,6 @@ ENV VIRTUAL_ENV=/app/.venv \
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-COPY dyana_cli ./dyana_cli
+COPY dyana ./dyana
 
-ENTRYPOINT ["python", "-m", "dyana_cli"]
+ENTRYPOINT ["python", "-m", "dyana"]
