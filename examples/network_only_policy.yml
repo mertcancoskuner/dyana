@@ -1,0 +1,13 @@
+apiVersion: tracee.aquasec.com/v1beta1
+kind: Policy
+metadata:
+  name: container-network-events
+  annotations:
+    description: network events only policy
+spec:
+  scope:
+    # always set this scope in order to filter events for the new loader container
+    - container=new
+  rules:
+    - event: security_socket_connect
+    - event: net_packet_dns

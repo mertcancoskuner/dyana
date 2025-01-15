@@ -59,6 +59,9 @@ def trace(
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
     platform: str | None = typer.Option(help="Platform to use.", default=None),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
+    policy: pathlib.Path | None = typer.Option(
+        help="Path to a policy or directory with custom tracee policies.", default=None
+    ),
     timeout: int = typer.Option(help="Execution timeout in seconds.", default=60),
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
@@ -70,8 +73,12 @@ def trace(
         if not no_gpu and platform_pkg.system() != "Linux":
             no_gpu = True
 
+        # check if policy is either a file or a directory
+        if policy and not policy.exists():
+            raise typer.BadParameter(f"policy file or directory not found: {policy}")
+
         the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose)
-        the_tracer = Tracer(the_loader)
+        the_tracer = Tracer(the_loader, policy=policy)
 
         trace = the_tracer.run_trace(allow_network, not no_gpu, allow_volume_write)
 

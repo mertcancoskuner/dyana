@@ -1,4 +1,5 @@
 import json
+import pathlib
 import platform
 import threading
 import time
@@ -72,7 +73,7 @@ class Tracer:
         "net_packet_dns",
     ] + SECURITY_EVENTS
 
-    def __init__(self, loader: Loader):
+    def __init__(self, loader: Loader, policy: pathlib.Path | None = None):
         print(":eye_in_speech_bubble:  [bold]tracer[/]: initializing ...")
 
         docker.pull(Tracer.DOCKER_IMAGE)
@@ -83,17 +84,30 @@ class Tracer:
         self.args = [
             "--output",
             "json",
-            # only trace events that are part of a new container
-            "--scope",
-            "container=new",
             # enable debug logging to know when tracee is ready
             "--log",
             "debug",
         ]
-        for event in Tracer.DEFAULT_EVENTS:
-            self.args.append("--events")
-            self.args.append(event)
 
+        # check for a custom policy file or folder
+        self.policy = policy.resolve().absolute() if policy else None
+        self.policy_volume: str | None = None
+        if policy:
+            print(f":eye_in_speech_bubble:  [bold]tracer[/]: using custom policy [yellow]{policy}[/]")
+            self.policy_volume = f"/{policy.name}"
+            self.args.append("--policy")
+            self.args.append(self.policy_volume)
+        else:
+            # NOTE: policy and --scope / --events are mutually exclusive
+
+            # only trace events that are part of a new container
+            self.args.append("--scope")
+            self.args.append("container=new")
+            for event in Tracer.DEFAULT_EVENTS:
+                self.args.append("--events")
+                self.args.append(event)
+
+        self.reader_error: str | None = None
         self.reader_thread: threading.Thread | None = None
         self.container: docker_pkg.models.containers.Container | None = None
         self.ready = False
@@ -132,7 +146,10 @@ class Tracer:
             return
 
         if not line.startswith("{"):
-            print(f"[dim]{line}[/]")
+            if line.startswith("Error:"):
+                self.reader_error = line.replace("Error:", "").strip()
+            else:
+                print(f"[dim]{line}[/]")
             return
 
         message = json.loads(line)
@@ -168,17 +185,22 @@ class Tracer:
         # 👁️‍🗨️  tracer: KConfig: could not check enabled kconfig features
         # 👁️‍🗨️  tracer: KConfig: assuming kconfig values, might have unexpected behavior
 
+        volumes = {"/etc/os-release": "/etc/os-release-host", "/var/run/docker.sock": "/var/run/docker.sock"}
+        if self.policy:
+            volumes[self.policy] = self.policy_volume
+
         # start tracee in a detached container
         self.container = docker.run_privileged_detached(
             Tracer.DOCKER_IMAGE,
             self.args,
-            volumes={"/etc/os-release": "/etc/os-release-host", "/var/run/docker.sock": "/var/run/docker.sock"},
+            volumes=volumes,
             # override the entrypoint so we can pass our own arguments
             entrypoint="/tracee/tracee",
             environment={"LIBBPFGO_OSRELEASE_FILE": "/etc/os-release-host"},
         )
 
         # start reading tracee output in a separate thread
+        self.reader_error = None
         self.reader_thread = threading.Thread(target=self._reader_thread)
         self.reader_thread.daemon = True
         self.reader_thread.start()
@@ -186,6 +208,8 @@ class Tracer:
         # tracee takes a few seconds to warm up and trace events
         while not self.ready:
             time.sleep(1)
+            if self.reader_error:
+                raise Exception(self.reader_error)
 
     def _stop(self) -> None:
         if self.container:

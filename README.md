@@ -59,16 +59,30 @@ Create a trace file for a given loader with:
 dyana trace --loader automodel ... --output trace.json
 ```
 
-**By default, Dyana will not allow network access to the model container.** If you need to allow it, you can pass the `--allow-network` flag:
+It is possible to override the default events that Dyana will trace by passing a [custom policy](https://aquasecurity.github.io/tracee/v0.14/docs/policies/) to the tracer with:
 
 ```bash
-dyana trace ... --allow-network
+dyana trace --loader automodel ... --policy examples/network_only_policy.yml
 ```
 
 Show a summary of the trace file with:
 
 ```bash
 dyana summary --trace-path trace.json
+```
+
+### Default Safeguards
+
+Dyana does not allow network access by default to the loader container. If you need to allow it, you can pass the `--allow-network` flag:
+
+```bash
+dyana trace ... --allow-network
+```
+
+Dyana uses a shared volume to pass your files to the loader and by default it does not allow writing to it. If you need to allow it, you can pass the `--allow-volume-write` flag:
+
+```bash
+dyana trace ... --allow-volume-write
 ```
 
 ## Loaders
