@@ -37,7 +37,7 @@ def build(
     verbose: bool = False,
 ) -> Image:
     if client is None:
-        raise Exception("Docker not available")
+        raise Exception("docker not available or not running")
 
     norm_name = sanitized_agent_name(name)
     if norm_name != name:
@@ -87,7 +87,7 @@ def run_detached(
     allow_volume_write: bool = False,
 ) -> docker.models.containers.Container:
     if client is None:
-        raise Exception("Docker not available")
+        raise Exception("docker not available or not running")
 
     # by default network is disabled
     network_mode = "bridge" if allow_network else "none"
@@ -142,7 +142,7 @@ def run_privileged_detached(
     environment: dict[str, str] | None = None,
 ) -> docker.models.containers.Container:
     if client is None:
-        raise Exception("Docker not available")
+        raise Exception("docker not available or not running")
 
     return client.containers.run(
         image,

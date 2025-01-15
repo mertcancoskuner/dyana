@@ -65,21 +65,26 @@ def trace(
     allow_volume_write: bool = typer.Option(help="Mount volumes as read-write.", default=False),
     verbose: bool = typer.Option(help="Verbose mode.", default=False),
 ) -> None:
-    # disable GPU on non-Linux systems
-    if not no_gpu and platform_pkg.system() != "Linux":
-        no_gpu = True
+    try:
+        # disable GPU on non-Linux systems
+        if not no_gpu and platform_pkg.system() != "Linux":
+            no_gpu = True
 
-    the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose)
-    the_tracer = Tracer(the_loader)
+        the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose)
+        the_tracer = Tracer(the_loader)
 
-    trace = the_tracer.run_trace(allow_network, not no_gpu, allow_volume_write)
+        trace = the_tracer.run_trace(allow_network, not no_gpu, allow_volume_write)
 
-    print(f":card_file_box:  saving {len(trace.events)} events to {output}\n")
+        print(f":card_file_box:  saving {len(trace.events)} events to {output}\n")
 
-    with open(output, "w") as f:
-        f.write(trace.model_dump_json())
+        with open(output, "w") as f:
+            f.write(trace.model_dump_json())
 
-    summary(output)
+        summary(output)
+    except Exception as e:
+        print(f":cross_mark: [bold][red]error:[/] [red]{e}[/]")
+        if verbose:
+            raise
 
 
 @cli.command(help="Show a summary of the trace.")
