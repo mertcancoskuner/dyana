@@ -1,15 +1,10 @@
 import argparse
 import json
 import os
-import resource
-import subprocess
+import runpy
 import typing as t
 
-
-def get_peak_rss() -> int:
-    # https://stackoverflow.com/a/7669482
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
-
+from dyana import capture_output, get_current_imports, get_peak_rss
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an Python file")
@@ -24,18 +19,22 @@ if __name__ == "__main__":
         "exit_code": None,
     }
 
+    imports_at_start = get_current_imports()
+
     if not os.path.exists(args.script):
         result["errors"]["elf"] = "Python file not found"
     else:
         try:
-            ret = subprocess.run(["python", args.script], capture_output=True, text=True, errors="replace")
+            with capture_output() as (stdout_buffer, stderr_buffer):
+                runpy.run_path(args.script)
 
-            result["ram"]["after_execution"] = get_peak_rss()
-
-            result["stdout"] = ret.stdout
-            result["stderr"] = ret.stderr
-            result["exit_code"] = ret.returncode
+                result["ram"]["after_execution"] = get_peak_rss()
+                result["stdout"] = stdout_buffer.getvalue()
+                result["stderr"] = stderr_buffer.getvalue()
         except Exception as e:
             result["errors"]["elf"] = str(e)
+
+    imports_at_end = get_current_imports()
+    result["extra"] = {"imports": {k: imports_at_end[k] for k in imports_at_end if k not in imports_at_start}}
 
     print(json.dumps(result))

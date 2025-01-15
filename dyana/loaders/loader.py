@@ -1,7 +1,9 @@
 import os
 import pathlib
+import shutil
 import threading
 import time
+import typing as t
 from datetime import datetime
 
 import docker as docker_pkg
@@ -33,6 +35,7 @@ class Run(BaseModel):
     stdout: str | None = None
     stderr: str | None = None
     exit_code: int | None = None
+    extra: dict[str, t.Any] | None = None
 
 
 class Loader:
@@ -51,6 +54,7 @@ class Loader:
 
         self.image_name = name
         self.timeout = timeout
+        self.base_lib_path = os.path.join(loaders.__path__[0], "base/dyana.py")
         self.path = os.path.join(loaders.__path__[0], name)
         self.reader_thread: threading.Thread | None = None
         self.container: docker_pkg.models.containers.Container | None = None
@@ -82,6 +86,11 @@ class Loader:
 
         if build:
             print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
+            # copy the base dyana.py to the loader directory
+            # TODO: ideally the file name should be randomized in order to avoid low-hanging fruits in terms
+            # of sandbox detection techniques
+            shutil.copy(self.base_lib_path, os.path.join(self.path, "dyana.py"))
+
             self.image = docker.build(
                 self.path, self.image_name, platform=self.platform, build_args=self.build_args, verbose=verbose
             )

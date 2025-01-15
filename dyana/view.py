@@ -255,3 +255,48 @@ def view_security_events(trace: dict[str, t.Any]) -> None:
             print(f"  * {signature} ([dim]{category}[/], {severity_fmt(severity_level)})")
 
         print()
+
+
+def view_extra_unknown(key: str, value: t.Any) -> None:
+    if value:
+        print(f"[bold yellow]{key.title()}:[/] ")
+        print(f"  {value}")
+        print()
+
+
+def count_package_prefixes(path_dict: dict[str, str], level: int = 2) -> dict[str, int]:
+    from collections import defaultdict
+
+    prefix_counter = defaultdict(int)
+
+    for package_path in path_dict.keys():
+        parts = package_path.split(".")
+        if len(parts) >= level:
+            prefix = ".".join(parts[:level])
+        else:
+            prefix = parts[0]
+
+        prefix_counter[prefix] += 1
+
+    return dict(prefix_counter)
+
+
+def view_extra_imports(key: str, value: t.Any) -> None:
+    if value:
+        print("[bold yellow]Top Level Imports:[/] ")
+        as_dict = dict(value.items())
+        as_counters = count_package_prefixes(as_dict, level=1)
+        for package, count in sorted(as_counters.items(), key=lambda x: x[1], reverse=True):
+            right = "[dim].*[/]" if count > 1 else ""
+            print(f"  * [green]{package}[/]{right}: {count}")
+        print()
+
+
+def view_extra(run: dict[str, t.Any]) -> None:
+    if "extra" in run and run["extra"]:
+        for k, v in run["extra"].items():
+            fn_name = f"view_extra_{k}"
+            if fn_name in globals():
+                globals()[fn_name](k, v)
+            else:
+                view_extra_unknown(k, v)

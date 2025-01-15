@@ -1,15 +1,10 @@
 import argparse
 import json
 import os
-import resource
 import subprocess
 import typing as t
 
-
-def get_peak_rss() -> int:
-    # https://stackoverflow.com/a/7669482
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
-
+from dyana import get_peak_rss
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an ELF file")

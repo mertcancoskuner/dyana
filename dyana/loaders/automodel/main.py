@@ -1,39 +1,12 @@
 import argparse
 import json
 import os
-import resource
 import typing as t
 
 import torch
 from transformers import AutoModel, AutoTokenizer
 
-
-def get_peak_rss() -> int:
-    # https://stackoverflow.com/a/7669482
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
-
-
-def get_gpu_usage() -> list[dict[str, t.Any]]:
-    usage: list[dict[str, t.Any]] = []
-
-    if torch.cuda.is_available():
-        # for each GPU
-        for i in range(torch.cuda.device_count()):
-            dev = torch.cuda.get_device_properties(i)
-            mem = torch.cuda.mem_get_info(i)
-            (free, total) = mem
-
-            usage.append(
-                {
-                    "device_index": i,
-                    "device_name": dev.name,
-                    "total_memory": total,
-                    "free_memory": free,
-                }
-            )
-
-    return usage
-
+from dyana import get_current_imports, get_gpu_usage, get_peak_rss
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Profile model files")
@@ -47,6 +20,7 @@ if __name__ == "__main__":
     ram: dict[str, int] = {"start": get_peak_rss()}
     gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    imports_at_start = get_current_imports()
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
@@ -75,12 +49,18 @@ if __name__ == "__main__":
     except Exception as e:
         errors["model"] = str(e)
 
+    imports_at_end = get_current_imports()
+    imported = {k: imports_at_end[k] for k in imports_at_end if k not in imports_at_start}
+
     print(
         json.dumps(
             {
                 "ram": ram,
                 "gpu": gpu,
                 "errors": errors,
+                "extra": {
+                    "imports": imported,
+                },
             }
         )
     )

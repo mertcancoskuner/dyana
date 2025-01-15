@@ -3,6 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY requirements.txt .
+COPY dyana.py .
 COPY main.py .
 
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
