@@ -235,6 +235,8 @@ def view_disk_events(trace: dict[str, t.Any]) -> None:
 def view_security_events(trace: dict[str, t.Any]) -> None:
     security_events = {event for event in trace["events"] if event["eventName"] in Tracer.SECURITY_EVENTS}
     if security_events:
+        print("[bold yellow]Security Events:[/]")
+
         unique = {}
         for event in security_events:
             if "metadata" in event:
