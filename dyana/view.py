@@ -133,12 +133,16 @@ def view_gpus(run: dict[str, t.Any]) -> None:
 
 def view_process_executions(trace: dict[str, t.Any]) -> None:
     proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
+    visualized = []
     if proc_execs:
         print("[bold yellow]Process Executions:[/]")
         for proc_exec in proc_execs:
             cmd_path = [arg["value"] for arg in proc_exec["args"] if arg["name"] == "cmdpath"][0]
             cmd_argv = [list(arg["value"]) for arg in proc_exec["args"] if arg["name"] == "argv"][0]
-            print(f"  * {proc_exec['processName']} -> [bold red]{proc_exec['syscall']}[/] {cmd_path} {cmd_argv}")
+            line = f"  * {proc_exec['processName']} -> [bold red]{proc_exec['syscall']}[/] {cmd_path} {cmd_argv}"
+            if line not in visualized:
+                visualized.append(line)
+                print(line)
         print()
 
 
@@ -151,15 +155,18 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
         all = connects + dns_queries
         all.sort(key=lambda e: e["timestamp"])
 
+        visualized = []
+
         for event in all:
             if event["eventName"] == "security_socket_connect":
                 remote_addr = [arg["value"] for arg in event["args"] if arg["name"] == "remote_addr"][0]
                 remote_addr_family = remote_addr["sa_family"]
                 remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
+                line = f"  * {event['processName']} -> [bold red]{event['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
 
-                print(
-                    f"  * {event['processName']} -> [bold red]{event['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
-                )
+                if line not in visualized:
+                    visualized.append(line)
+                    print(line)
 
             else:
                 data = [arg["value"] for arg in event["args"] if arg["name"] == "proto_dns"][0]
@@ -167,9 +174,13 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
                 answers = [f'{a["name"]}={a["IP"]}' for a in data["answers"]]
 
                 if not answers:
-                    print(f"  * {event['processName']} | [bold red]dns[/] | question={', '.join(question_names)}")
+                    line = f"  * {event['processName']} | [bold red]dns[/] | question={', '.join(question_names)}"
                 else:
-                    print(f"  * {event['processName']} | [bold red]dns[/] | answer={', '.join(answers)}")
+                    line = f"  * {event['processName']} | [bold red]dns[/] | answer={', '.join(answers)}"
+
+                if line not in visualized:
+                    visualized.append(line)
+                    print(line)
 
         print()
 
