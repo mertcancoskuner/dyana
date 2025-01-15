@@ -5,6 +5,41 @@ from contextlib import contextmanager
 from io import StringIO
 
 
+class Profiler:
+    def __init__(self, gpu: bool = False):
+        self._errors: dict[str, str] = {}
+        self._ram: dict[str, int] = {"start": get_peak_rss()}
+        self._gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()} if gpu else {}
+        self._imports_at_start = get_current_imports()
+        self._additionals: dict[str, t.Any] = {}
+
+    def track_memory(self, event: str) -> None:
+        self._ram[event] = get_peak_rss()
+        if self._gpu:
+            self._gpu[event] = get_gpu_usage()
+
+    def track_error(self, event: str, error: str) -> None:
+        self._errors[event] = error
+
+    def track(self, key: str, value: t.Any) -> None:
+        self._additionals[key] = value
+
+    def as_dict(self) -> dict[str, t.Any]:
+        imports_at_end = get_current_imports()
+        imported = {k: imports_at_end[k] for k in imports_at_end if k not in self._imports_at_start}
+
+        as_dict: dict[str, t.Any] = {
+            "ram": self._ram,
+            "errors": self._errors,
+            "extra": {"imports": imported},
+        } | self._additionals
+
+        if self._gpu:
+            as_dict["gpu"] = self._gpu
+
+        return as_dict
+
+
 @contextmanager
 def capture_output() -> t.Generator[tuple[StringIO, StringIO], None, None]:
     """
