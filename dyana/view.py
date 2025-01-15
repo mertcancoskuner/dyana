@@ -267,7 +267,7 @@ def view_extra_unknown(key: str, value: t.Any) -> None:
 def count_package_prefixes(path_dict: dict[str, str], level: int = 2) -> dict[str, int]:
     from collections import defaultdict
 
-    prefix_counter = defaultdict(int)
+    prefix_counter: defaultdict[str, int] = defaultdict(int)
 
     for package_path in path_dict.keys():
         parts = package_path.split(".")

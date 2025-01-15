@@ -6,7 +6,7 @@ from io import StringIO
 
 
 @contextmanager
-def capture_output():
+def capture_output() -> t.Generator[tuple[StringIO, StringIO], None, None]:
     """
     Context manager to capture stdout and stderr
 
@@ -63,11 +63,11 @@ def get_gpu_usage() -> list[dict[str, t.Any]]:
     return usage
 
 
-def get_current_imports() -> dict[str, str]:
+def get_current_imports() -> dict[str, str | None]:
     """
     Get the currently imported modules.
     """
-    imports = {}
+    imports: dict[str, str | None] = {}
 
     # for each loaded module
     for module_name, module in sys.modules.items():

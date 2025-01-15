@@ -4,7 +4,7 @@ import os
 import pickle
 import typing as t
 
-from dyana import get_current_imports, get_peak_rss
+from dyana import get_current_imports, get_peak_rss  # type: ignore[attr-defined]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a pickle file")

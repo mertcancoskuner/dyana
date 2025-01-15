@@ -6,7 +6,7 @@ import typing as t
 import torch
 from transformers import AutoModel, AutoTokenizer
 
-from dyana import get_current_imports, get_gpu_usage, get_peak_rss
+from dyana import get_current_imports, get_gpu_usage, get_peak_rss  # type: ignore[attr-defined]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Profile model files")
