@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import subprocess
-import typing as t
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
