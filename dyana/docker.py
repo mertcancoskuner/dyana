@@ -1,5 +1,7 @@
+import os
 import pathlib
 import re
+import shutil
 
 import docker
 from docker.models.images import Image
@@ -28,6 +30,25 @@ def sanitized_agent_name(name: str) -> str:
     return name
 
 
+def _raise_docker_exception() -> None:
+    msg: str = ""
+    docker_in_path: bool = shutil.which("docker") is not None
+    docker_sock_exists: bool = os.path.exists("/var/run/docker.sock")
+
+    if not docker_sock_exists and not docker_in_path:
+        msg = "docker is not installed"
+    else:
+        # the docker binary is in $PATH and/or the socket exists
+        msg = "docker is not running"
+
+    raise Exception(msg)
+
+
+def _ensure_docker_client() -> None:
+    if client is None:
+        _raise_docker_exception()
+
+
 def build(
     directory: str | pathlib.Path,
     name: str,
@@ -36,8 +57,7 @@ def build(
     force_rebuild: bool = False,
     verbose: bool = False,
 ) -> Image:
-    if client is None:
-        raise Exception("docker not available or not running")
+    _ensure_docker_client()
 
     norm_name = sanitized_agent_name(name)
     if norm_name != name:
@@ -86,8 +106,7 @@ def run_detached(
     allow_gpus: bool = True,
     allow_volume_write: bool = False,
 ) -> docker.models.containers.Container:
-    if client is None:
-        raise Exception("docker not available or not running")
+    _ensure_docker_client()
 
     # by default network is disabled
     network_mode = "bridge" if allow_network else "none"
@@ -141,8 +160,7 @@ def run_privileged_detached(
     entrypoint: str | None = None,
     environment: dict[str, str] | None = None,
 ) -> docker.models.containers.Container:
-    if client is None:
-        raise Exception("docker not available or not running")
+    _ensure_docker_client()
 
     return client.containers.run(
         image,
