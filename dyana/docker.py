@@ -7,10 +7,42 @@ import docker
 from docker.models.images import Image
 from rich import print
 
+DOCKER_SOCKET_PATH = "/var/run/docker.sock"
+DOCKER_SOCKET_EXISTS = os.path.exists(DOCKER_SOCKET_PATH)
+COLIMA_SOCKET_PATH = os.path.expanduser("~/.colima/docker.sock")
+COLIMA_SOCKET_EXISTS = os.path.exists(COLIMA_SOCKET_PATH)
+
+
 try:
     client = docker.from_env()
 except docker.errors.DockerException:
-    client = None
+    # check if Colima exists
+    if COLIMA_SOCKET_EXISTS:
+        # https://github.com/abiosoft/colima/issues/468
+        try:
+            client = docker.DockerClient(base_url="unix://" + COLIMA_SOCKET_PATH)
+            print(f":whale: [bold]docker[/]: found {COLIMA_SOCKET_PATH}, using colima runtime")
+        except docker.errors.DockerException:
+            client = None
+    else:
+        client = None
+
+
+def _raise_docker_exception() -> None:
+    msg: str = ""
+    docker_in_path: bool = shutil.which("docker") is not None
+    if not DOCKER_SOCKET_EXISTS and not docker_in_path:
+        msg = "docker is not installed"
+    else:
+        # the docker binary is in $PATH and/or the socket exists
+        msg = "docker is not running"
+
+    raise Exception(msg)
+
+
+def _ensure_docker_client() -> None:
+    if client is None:
+        _raise_docker_exception()
 
 
 def sanitized_agent_name(name: str) -> str:
@@ -28,25 +60,6 @@ def sanitized_agent_name(name: str) -> str:
     name = name.strip("-")
 
     return name
-
-
-def _raise_docker_exception() -> None:
-    msg: str = ""
-    docker_in_path: bool = shutil.which("docker") is not None
-    docker_sock_exists: bool = os.path.exists("/var/run/docker.sock")
-
-    if not docker_sock_exists and not docker_in_path:
-        msg = "docker is not installed"
-    else:
-        # the docker binary is in $PATH and/or the socket exists
-        msg = "docker is not running"
-
-    raise Exception(msg)
-
-
-def _ensure_docker_client() -> None:
-    if client is None:
-        _raise_docker_exception()
 
 
 def build(
