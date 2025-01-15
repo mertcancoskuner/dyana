@@ -186,8 +186,8 @@ class Tracer:
         # 👁️‍🗨️  tracer: KConfig: assuming kconfig values, might have unexpected behavior
 
         volumes = {"/etc/os-release": "/etc/os-release-host", "/var/run/docker.sock": "/var/run/docker.sock"}
-        if self.policy:
-            volumes[self.policy] = self.policy_volume
+        if self.policy and self.policy_volume:
+            volumes[str(self.policy)] = self.policy_volume
 
         # start tracee in a detached container
         self.container = docker.run_privileged_detached(
