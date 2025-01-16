@@ -73,9 +73,10 @@ class Loader:
                     self.build_args = self.settings.parse_build_args(args)
                     self.args = self.settings.parse_args(args)
 
-                for arg in self.settings.args:
-                    if arg.required and not self.args:
-                        raise ValueError(f"Argument --{arg.name} is required")
+                if self.settings.args:
+                    for arg in self.settings.args:
+                        if arg.required and not self.args:
+                            raise ValueError(f"Argument --{arg.name} is required")
         else:
             self.settings = None
 
