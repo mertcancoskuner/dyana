@@ -32,6 +32,7 @@ class Run(BaseModel):
     errors: dict[str, str] | None = None
     ram: dict[str, int] | None = None
     gpu: dict[str, list[GpuDeviceUsage]] | None = None
+    disk: dict[str, int] | None = None
     stdout: str | None = None
     stderr: str | None = None
     exit_code: int | None = None
@@ -103,8 +104,8 @@ class Loader:
                 print(
                     f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/] ({self.platform})"
                 )
-            else:
-                print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
+            # else:
+                # print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
 
     def _reader_thread(self) -> None:
         if not self.container:
@@ -161,13 +162,15 @@ class Loader:
                 else:
                     arguments.append(arg.value)
 
-        if allow_network:
-            print(
-                ":popcorn: [bold]loader[/]: [yellow]warning: allowing bridged network access to the model container[/]"
-            )
+        if self.settings and self.settings.network:
+            allow_network = True
+            print(":popcorn: [bold]loader[/]: [yellow]required bridged network access[/]")
+
+        elif allow_network:
+            print(":popcorn: [bold]loader[/]: [yellow]warning: allowing bridged network access to the container[/]")
 
         if allow_volume_write:
-            print(":popcorn: [bold]loader[/]: [yellow]warning: allowing volume write to the model container[/]")
+            print(":popcorn: [bold]loader[/]: [yellow]warning: allowing volume write to the container[/]")
 
         if arguments:
             print(f":popcorn: [bold]loader[/]: executing with arguments [dim]{arguments}[/] ...")

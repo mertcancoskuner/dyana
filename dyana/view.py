@@ -131,6 +131,22 @@ def view_gpus(run: dict[str, t.Any]) -> None:
                     print()
 
 
+def view_disk_usage(run: dict[str, t.Any]) -> None:
+    disk = run["disk"]
+    if disk:
+        print("[bold yellow]Disk Usage:[/]")
+        disk_stages = list(disk.keys())
+        prev_stage = None
+        for stage in disk_stages:
+            if prev_stage is None:
+                print(f"  * {stage} : {sizeof_fmt(disk[stage])}")
+            else:
+                print(f"  * {stage} : {delta_fmt(disk[prev_stage], disk[stage])}")
+            prev_stage = stage
+
+        print()
+
+
 def view_process_executions(trace: dict[str, t.Any]) -> None:
     proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
     visualized = []

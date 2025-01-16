@@ -19,6 +19,7 @@ class LoaderSettings(BaseModel):
     description: str
     build_args: dict[str, str] | None = None
     args: list[LoaderArgument] | None = None
+    network: bool | None = False
 
     def _parse_arg_name_from(self, name: str, args: list[str]) -> str | None:
         found_pre = False

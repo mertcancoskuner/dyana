@@ -12,6 +12,7 @@ from dyana.loaders.loader import Loader
 from dyana.tracer.tracee import Tracer
 from dyana.view import (
     view_disk_events,
+    view_disk_usage,
     view_extra,
     view_gpus,
     view_header,
@@ -106,6 +107,7 @@ def summary(trace_path: pathlib.Path = typer.Option(help="Path to the trace file
     view_header(trace)
     view_ram(trace["run"])
     view_gpus(trace["run"])
+    view_disk_usage(trace["run"])
 
     view_process_executions(trace)
     view_network_events(trace)

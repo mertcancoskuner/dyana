@@ -1,4 +1,5 @@
 import resource
+import shutil
 import sys
 import typing as t
 from contextlib import contextmanager
@@ -8,6 +9,7 @@ from io import StringIO
 class Profiler:
     def __init__(self, gpu: bool = False):
         self._errors: dict[str, str] = {}
+        self._disk: dict[str, int] = {"start": get_disk_usage()}
         self._ram: dict[str, int] = {"start": get_peak_rss()}
         self._gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()} if gpu else {}
         self._imports_at_start = get_current_imports()
@@ -17,6 +19,9 @@ class Profiler:
         self._ram[event] = get_peak_rss()
         if self._gpu:
             self._gpu[event] = get_gpu_usage()
+
+    def track_disk(self, event: str) -> None:
+        self._disk[event] = get_disk_usage()
 
     def track_error(self, event: str, error: str) -> None:
         self._errors[event] = error
@@ -30,6 +35,7 @@ class Profiler:
 
         as_dict: dict[str, t.Any] = {
             "ram": self._ram,
+            "disk": self._disk,
             "errors": self._errors,
             "extra": {"imports": imported},
         } | self._additionals
@@ -61,6 +67,14 @@ def capture_output() -> t.Generator[tuple[StringIO, StringIO], None, None]:
     finally:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
+
+
+def get_disk_usage() -> int:
+    """
+    Get the disk usage.
+    """
+    _, used, _ = shutil.disk_usage("/")
+    return used
 
 
 def get_peak_rss() -> int:
