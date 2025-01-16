@@ -160,8 +160,14 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
         for event in all:
             if event["eventName"] == "security_socket_connect":
                 remote_addr = [arg["value"] for arg in event["args"] if arg["name"] == "remote_addr"][0]
-                remote_addr_family = remote_addr["sa_family"]
-                remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
+
+                if isinstance(remote_addr, dict):
+                    remote_addr_family = remote_addr["sa_family"]
+                    remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
+                else:
+                    remote_addr_family = "?"
+                    remote_addr_fields = []
+
                 line = f"  * {event['processName']} -> [bold red]{event['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
 
                 if line not in visualized:
@@ -198,6 +204,9 @@ def view_disk_events(trace: dict[str, t.Any]) -> None:
         "/proc/": 0,
         "/sys/": 0,
         "/etc/": 0,
+        "/usr/share/": 0,
+        "/tmp/": 0,
+        "/var/": 0,
     }
 
     for file in opens:
