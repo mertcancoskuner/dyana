@@ -1,0 +1,10 @@
+description: Loads and profiles Python packages installation via PIP.
+network: true
+
+build_args:
+  extra-dependencies: EXTRA_DEPENDENCIES
+
+args:
+  - name: package
+    description: PIP compatible package name or expression.
+    required: true

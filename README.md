@@ -103,12 +103,9 @@ dyana trace --loader automodel --model /path/to/model --input "This is an exampl
 # automodel is the default loader, so this is equivalent to:
 dyana trace --model /path/to/model --input "This is an example sentence."
 
-
 # in case the model requires extra dependencies, you can pass them as:
 dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example sentence." --extra-requirements "protobuf fugashi ipadic"
 ```
-
-<img alt="automodel" src="https://github.com/dreadnode/dyana/blob/main/examples/malicious.llama-3.2-1b-linux.png?raw=true"/>
 
 ### elf
 
@@ -126,8 +123,6 @@ dyana trace --loader elf --elf /path/to/linux_executable --platform linux/amd64
 dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 ```
 
-<img alt="elf" src="https://github.com/dreadnode/dyana/blob/main/examples/mirai.png?raw=true"/>
-
 ### pickle
 
 This loader will load a Pickle serialized file.
@@ -140,8 +135,6 @@ dyana trace --loader pickle --pickle /path/to/file.pickle
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
-
-<img alt="pickle" src="https://github.com/dreadnode/dyana/blob/main/examples/malicious-pickle-on-macos.png?raw=true"/>
 
 ### python
 
@@ -156,7 +149,21 @@ dyana trace --loader python --script /path/to/file.py
 dyana trace --loader python --script /path/to/file.py --allow-network
 ```
 
-<img alt="python" src="https://github.com/dreadnode/dyana/blob/main/examples/python-hello-on-macos.png?raw=true"/>
+### pip
+
+This loader will install a Python package via PIP.
+
+#### Example Usage
+
+```bash
+dyana trace --loader pip --package requests
+
+# you can install a specific version of a package:
+dyana trace --loader pip --package requests==2.28.2
+
+# you can also pass extra dependencies to be installed:
+dyana trace --loader pip --package foobar --extra-dependencies "gcc"
+```
 
 ### js
 
