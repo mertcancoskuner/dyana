@@ -95,8 +95,6 @@ To see the available loaders and their scriptions, run `dyana loaders`.
 
 The default loader for machine learning models. It will load any model that is compatible with [AutoModel and AutoTokenizer](https://huggingface.co/transformers/v3.0.2/model_doc/auto.html).
 
-#### Example Usage
-
 ```bash
 dyana trace --loader automodel --model /path/to/model --input "This is an example sentence."
 
@@ -110,8 +108,6 @@ dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example se
 ### elf
 
 This loader will load an ELF file and run it.
-
-#### Example Usage
 
 ```bash
 dyana trace --loader elf --elf /path/to/linux_executable
@@ -127,8 +123,6 @@ dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 
 This loader will load a Pickle serialized file.
 
-#### Example Usage
-
 ```bash
 dyana trace --loader pickle --pickle /path/to/file.pickle
 
@@ -140,8 +134,6 @@ dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 
 This loader will load a Python file and run it.
 
-#### Example Usage
-
 ```bash
 dyana trace --loader python --script /path/to/file.py
 
@@ -152,8 +144,6 @@ dyana trace --loader python --script /path/to/file.py --allow-network
 ### pip
 
 This loader will install a Python package via PIP.
-
-#### Example Usage
 
 ```bash
 dyana trace --loader pip --package requests
@@ -169,16 +159,12 @@ dyana trace --loader pip --package foobar --extra-dependencies "gcc"
 
 This loader will load a Javascript file and run it via NodeJS.
 
-#### Example Usage
-
 ```bash
 dyana trace --loader js --script /path/to/file.js
 
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
-
-<img alt="js" src="https://github.com/dreadnode/dyana/blob/main/examples/js-hello-on-macos.png?raw=true"/>
 
 ## License
 
