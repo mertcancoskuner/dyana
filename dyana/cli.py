@@ -37,7 +37,7 @@ def loaders(
     loaders_path = loaders_pkg.__path__[0]
     loaders: list[Loader] = []
     for entry in pathlib.Path(loaders_path).iterdir():
-        if entry.is_dir() and not entry.name.startswith("__"):
+        if entry.is_dir() and not entry.name.startswith("__") and entry.name != "base":
             loaders.append(Loader(name=entry.name, build=build, timeout=10))
 
     table = Table(box=box.ROUNDED)

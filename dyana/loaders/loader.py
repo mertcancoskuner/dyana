@@ -72,11 +72,6 @@ class Loader:
                 if args:
                     self.build_args = self.settings.parse_build_args(args)
                     self.args = self.settings.parse_args(args)
-
-                if self.settings.args:
-                    for arg in self.settings.args:
-                        if arg.required and not self.args:
-                            raise ValueError(f"Argument --{arg.name} is required")
         else:
             self.settings = None
 
@@ -90,6 +85,11 @@ class Loader:
         self.image_name = f"dyana-{name}-loader"
 
         if build:
+            if self.settings and self.settings.args:
+                for arg in self.settings.args:
+                    if arg.required and not self.args:
+                        raise ValueError(f"Argument --{arg.name} is required")
+
             print(f":whale: [bold]loader[/]: initializing loader [bold]{name}[/]")
             # copy the base dyana.py to the loader directory
             # TODO: ideally the file name should be randomized in order to avoid low-hanging fruits in terms
