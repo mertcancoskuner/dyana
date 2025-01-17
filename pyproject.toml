@@ -4,7 +4,7 @@ authors = [
     "Ads Dawson <ads@dreadnode.io>",
 ]
 name = "dyana"
-version = "0.0.2"
+version = "0.1.0"
 description = "A sandbox environment based on Docker and eBPF to load and profile a wide range of file types."
 license = "MIT"
 repository = "https://github.com/dreadnode/dyana"
