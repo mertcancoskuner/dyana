@@ -312,8 +312,10 @@ def view_extra_imports(key: str, value: t.Any) -> None:
         as_dict = dict(value.items())
         as_counters = count_package_prefixes(as_dict, level=1)
         for package, count in sorted(as_counters.items(), key=lambda x: x[1], reverse=True):
-            right = "[dim].*[/]" if count > 1 else ""
-            print(f"  * [green]{package}[/]{right}: {count}")
+            if count > 1:
+                print(f"  * [green]{package}[/][dim].*[/]: {count}")
+            else:
+                print(f"  * [green]{package}[/]")
         print()
 
 
