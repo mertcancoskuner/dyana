@@ -21,6 +21,14 @@
     </a>
 </h4>
 
+<p align="center">
+    <strong>
+        <a href="https://docs.dreadnode.io/dyana/" target="_blank">
+            Documentation
+        </a>
+    </strong>
+</p>
+
 </br>
 
 Dyana is a sandbox environment using Docker and [Tracee](https://github.com/aquasecurity/tracee) for loading, running and profiling a wide range of files, including machine learning models, ELF executables, Pickle serialized files, Javascripts and more. It provides detailed insights into GPU memory usage, filesystem interactions, network requests, and security related events.
