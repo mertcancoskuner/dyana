@@ -61,6 +61,18 @@ pip uninstall dyana
 
 ## Usage
 
+Show a list of available loaders with:
+
+```bash
+dyana loaders
+```
+
+Show the help menu for a specific loader with:
+
+```bash
+dyana help automodel
+```
+
 Create a trace file for a given loader with:
 
 ```bash
@@ -96,8 +108,6 @@ dyana trace ... --allow-volume-write
 ## Loaders
 
 Dyana provides a set of loaders for different types of files, each loader has a dedicated set of arguments and will be executed in an isolated, offline by default container.
-
-To see the available loaders and their scriptions, run `dyana loaders`.
 
 ### automodel
 

@@ -43,7 +43,7 @@ class Loader:
     def __init__(
         self,
         name: str,
-        timeout: int,
+        timeout: int = 600,
         build: bool = True,
         platform: str | None = None,
         args: list[str] | None = None,
@@ -78,7 +78,7 @@ class Loader:
 
         self.dockerfile = os.path.join(self.path, "Dockerfile")
         if not os.path.exists(self.dockerfile):
-            raise ValueError(f"Loader {name} does not exist")
+            raise ValueError(f"Loader {name} does not exist, use [bold]dyana loaders[/] to see the available loaders")
         elif not os.path.isfile(self.dockerfile):
             raise ValueError(f"Loader {name} does not contain a Dockerfile")
 
@@ -105,7 +105,7 @@ class Loader:
                     f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/] ({self.platform})"
                 )
             # else:
-                # print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
+            # print(f":whale: [bold]loader[/]: using image [green]{self.image.tags[0]}[/] [dim]({self.image.id})[/]")
 
     def _reader_thread(self) -> None:
         if not self.container:
