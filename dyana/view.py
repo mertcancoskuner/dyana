@@ -214,6 +214,7 @@ def view_disk_events(trace: dict[str, t.Any]) -> None:
     any_special = False
     special_paths: dict[str, int] = {
         "/usr/local/lib/": 0,
+        "/app/node_modules/": 0,
         "/usr/lib/": 0,
         "/lib/": 0,
         "/dev/": 0,

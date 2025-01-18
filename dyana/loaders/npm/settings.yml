@@ -1,0 +1,10 @@
+description: Loads and profiles NodeJS packages installation via NPM.
+network: true
+
+build_args:
+  extra-dependencies: EXTRA_DEPENDENCIES
+
+args:
+  - name: package
+    description: NPM compatible package name or expression.
+    required: true
