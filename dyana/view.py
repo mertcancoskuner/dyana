@@ -132,9 +132,9 @@ def view_gpus(run: dict[str, t.Any]) -> None:
 
 
 def view_disk_usage(run: dict[str, t.Any]) -> None:
-    disk = run["disk"]
-    if disk:
+    if "disk" in run and run["disk"]:
         print("[bold yellow]Disk Usage:[/]")
+        disk = run["disk"]
         disk_stages = list(disk.keys())
         prev_stage = None
         for stage in disk_stages:
@@ -147,18 +147,40 @@ def view_disk_usage(run: dict[str, t.Any]) -> None:
         print()
 
 
+def view_exec_tree(exec: dict[str, t.Any], level: int = 0) -> None:
+    pad = "  " * level
+    print(f"{pad}* [dim]{exec['processId']}[/] {exec['command']}")
+    for child in exec["children"]:
+        view_exec_tree(child, level + 1)
+
+
 def view_process_executions(trace: dict[str, t.Any]) -> None:
     proc_execs = [event for event in trace["events"] if event["eventName"] == "sched_process_exec"]
-    visualized = []
     if proc_execs:
         print("[bold yellow]Process Executions:[/]")
+
+        execs = {}
         for proc_exec in proc_execs:
             cmd_path = [arg["value"] for arg in proc_exec["args"] if arg["name"] == "cmdpath"][0]
             cmd_argv = [list(arg["value"]) for arg in proc_exec["args"] if arg["name"] == "argv"][0]
-            line = f"  * {proc_exec['processName']} -> [bold red]{proc_exec['syscall']}[/] {cmd_path} {cmd_argv}"
-            if line not in visualized:
-                visualized.append(line)
-                print(line)
+            execs[proc_exec["processId"]] = {
+                "processId": proc_exec["processId"],
+                "parentProcessId": proc_exec["parentProcessId"],
+                "command": f"{proc_exec['processName']} -> [bold red]{proc_exec['syscall']}[/] {cmd_path} {cmd_argv}",
+                "children": [],
+            }
+
+        tree = []
+        for _, exec in execs.items():
+            parent_pid = exec["parentProcessId"]
+            if parent_pid in execs:
+                execs[parent_pid]["children"].append(exec)
+            else:
+                tree.append(exec)
+
+        for exec in tree:
+            view_exec_tree(exec)
+
         print()
 
 
