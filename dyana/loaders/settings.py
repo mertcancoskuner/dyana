@@ -35,7 +35,7 @@ class LoaderSettings(BaseModel):
             elif arg.startswith(f"{arg_name}="):
                 return arg.split("=")[1]
 
-        return None
+        return arg_name if found_pre else None
 
     def parse_build_args(self, args: list[str]) -> dict[str, str] | None:
         build_args: dict[str, str] | None = None
@@ -43,7 +43,7 @@ class LoaderSettings(BaseModel):
             build_args = {}
             for arg_name, build_arg_name in self.build_args.items():
                 value = self._parse_arg_name_from(arg_name, args)
-                if value:
+                if value is not None:
                     build_args[build_arg_name] = value
 
         return build_args
@@ -54,7 +54,7 @@ class LoaderSettings(BaseModel):
             parsed_args = []
             for arg in self.args:
                 value = self._parse_arg_name_from(arg.name, args)
-                if value:
+                if value is not None:
                     parsed_args.append(ParsedArgument(name=arg.name, value=value, volume=arg.volume))
                 elif arg.default:
                     parsed_args.append(ParsedArgument(name=arg.name, value=arg.default, volume=arg.volume))

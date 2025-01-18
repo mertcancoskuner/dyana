@@ -147,7 +147,8 @@ class Loader:
 
         if self.args:
             for arg in self.args:
-                arguments.append(f"--{arg.name}")
+                the_arg = f"--{arg.name}"
+                arguments.append(the_arg)
 
                 # check if the argument is a volume
                 if arg.volume:
@@ -159,7 +160,7 @@ class Loader:
                     volumes[str(volume_path)] = volume
 
                     arguments.append(volume)
-                else:
+                elif arg.value != the_arg:
                     arguments.append(arg.value)
 
         if self.settings and self.settings.network:
