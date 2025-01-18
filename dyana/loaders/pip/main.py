@@ -1,4 +1,5 @@
 import argparse
+import importlib
 import json
 import re
 import subprocess
@@ -21,11 +22,10 @@ if __name__ == "__main__":
 
         # explicitly require the package to make sure it's loaded
         package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
-        result = subprocess.run(["python3", "-c", f"import {package_name}"], capture_output=True, text=True)
-
-        profiler.track("exit_code", result.returncode)
-        profiler.track("stdout", result.stdout)
-        profiler.track("stderr", result.stderr)
+        try:
+            importlib.import_module(package_name)
+        except Exception as e:
+            profiler.track("stderr", str(e))
     except Exception as e:
         profiler.track_error("pip", str(e))
 
