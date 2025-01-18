@@ -59,31 +59,32 @@ def help(
 ) -> None:
     try:
         the_loader = Loader(name=loader, build=False)
-        print(f"[bold green]{the_loader.name}[/] - {the_loader.settings.description}\n")
-        if the_loader.settings.network:
-            print("network    : [bold red]yes[/]")
-        else:
-            print("network    : [dim]no[/]")
+        if the_loader.settings:
+            print(f"[bold green]{the_loader.name}[/] - {the_loader.settings.description}\n")
+            if the_loader.settings.network:
+                print("network    : [bold red]yes[/]")
+            else:
+                print("network    : [dim]no[/]")
 
-        if the_loader.settings.build_args:
-            print("build args :", ", ".join({f"[yellow]--{k}[/]" for k in the_loader.settings.build_args.keys()}))
+            if the_loader.settings.build_args:
+                print("build args :", ", ".join({f"[yellow]--{k}[/]" for k in the_loader.settings.build_args.keys()}))
 
-        if the_loader.settings.args:
-            print("")
-            table = Table(box=box.ROUNDED)
-            table.add_column("Argument", style="yellow")
-            table.add_column("Description")
-            table.add_column("Default")
-            table.add_column("Required")
+            if the_loader.settings.args:
+                print("")
+                table = Table(box=box.ROUNDED)
+                table.add_column("Argument", style="yellow")
+                table.add_column("Description")
+                table.add_column("Default")
+                table.add_column("Required")
 
-            for arg in the_loader.settings.args:
-                table.add_row(
-                    f"--{arg.name}",
-                    arg.description,
-                    f"[dim]{arg.default}[/]" if arg.default else "",
-                    str(arg.required),
-                )
-            print(table)
+                for arg in the_loader.settings.args:
+                    table.add_row(
+                        f"--{arg.name}",
+                        arg.description,
+                        f"[dim]{arg.default}[/]" if arg.default else "",
+                        str(arg.required),
+                    )
+                print(table)
 
     except Exception as e:
         print(f":cross_mark: [red]{e}[/]")
