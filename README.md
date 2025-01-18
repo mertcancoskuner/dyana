@@ -113,9 +113,10 @@ dyana trace ... --allow-volume-write
 
 ## Loaders
 
-Dyana provides a set of loaders for different types of files, each loader has a dedicated set of arguments and will be executed in an isolated, offline by default container.
+Dyana provides a set of loaders for different types of files, each loader has a dedicated set of arguments and will be executed in an isolated, offline by default container. Click on a loader to see the arguments and examples.
 
-### automodel
+<details>
+<summary><b>automodel</b></summary>
 
 The default loader for machine learning models. It will load any model that is compatible with [AutoModel and AutoTokenizer](https://huggingface.co/transformers/v3.0.2/model_doc/auto.html).
 
@@ -128,9 +129,10 @@ dyana trace --model /path/to/model --input "This is an example sentence."
 # in case the model requires extra dependencies, you can pass them as:
 dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example sentence." --extra-requirements "protobuf fugashi ipadic"
 ```
+</details>
 
-### elf
-
+<details>
+<summary><b>elf</b></summary>
 This loader will load an ELF file and run it.
 
 ```bash
@@ -142,9 +144,10 @@ dyana trace --loader elf --elf /path/to/linux_executable --platform linux/amd64
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 ```
+</details>
 
-### pickle
-
+<details>
+<summary><b>pickle</b></summary>
 This loader will load a Pickle serialized file.
 
 ```bash
@@ -153,9 +156,10 @@ dyana trace --loader pickle --pickle /path/to/file.pickle
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
+</details>
 
-### python
-
+<details>
+<summary><b>python</b></summary>
 This loader will load a Python file and run it.
 
 ```bash
@@ -164,9 +168,10 @@ dyana trace --loader python --script /path/to/file.py
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader python --script /path/to/file.py --allow-network
 ```
+</details>
 
-### pip
-
+<details>
+<summary><b>pip</b></summary>
 This loader will install a Python package via PIP.
 
 ```bash
@@ -178,9 +183,10 @@ dyana trace --loader pip --package requests==2.28.2
 # you can also pass extra dependencies to be installed:
 dyana trace --loader pip --package foobar --extra-dependencies "gcc"
 ```
+</details>
 
-### js
-
+<details>
+<summary><b>js</b></summary>
 This loader will load a Javascript file and run it via NodeJS.
 
 ```bash
@@ -189,9 +195,10 @@ dyana trace --loader js --script /path/to/file.js
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
+</details>
 
-### npm
-
+<details>
+<summary><b>npm</b></summary>
 This loader will install a Javascript package via NPM.
 
 ```bash
@@ -203,6 +210,8 @@ dyana trace --loader npm --package express@1.0.0
 # you can also pass extra dependencies to be installed:
 dyana trace --loader npm --package express --extra-dependencies "axios"
 ```
+
+</details>
 
 ## License
 
