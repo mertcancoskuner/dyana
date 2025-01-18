@@ -61,13 +61,13 @@ def view_header(trace: dict[str, t.Any]) -> None:
                 print(f"  * [b]{group}[/]: {error}")
         print()
 
-    if run["stdout"] is not None:
+    if run["stdout"]:
         print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{run['stdout'][:80].strip()}[/]")
 
-    if run["stderr"] is not None:
+    if run["stderr"]:
         print(f"[bold red]Stderr[/bold red]         : {run['stderr'][:80].strip()}")
 
-    if run["exit_code"] is not None:
+    if run["exit_code"]:
         print(f"[bold blue]Exit code[/bold blue]      : {run['exit_code']}")
 
     print()
