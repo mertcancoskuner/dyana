@@ -47,7 +47,7 @@ class Loader:
         build: bool = True,
         platform: str | None = None,
         args: list[str] | None = None,
-        save: list[str] = [],
+        save: list[str] | None = None,
         save_to: pathlib.Path = pathlib.Path("./artifacts"),
         verbose: bool = False,
     ):
@@ -68,7 +68,7 @@ class Loader:
         self.settings: LoaderSettings | None = None
         self.build_args: dict[str, str] | None = None
         self.args: list[ParsedArgument] | None = None
-        self.save: list[str] = save
+        self.save: list[str] | None = save
         self.save_to: pathlib.Path = save_to.resolve().absolute()
 
         if os.path.exists(self.settings_path):

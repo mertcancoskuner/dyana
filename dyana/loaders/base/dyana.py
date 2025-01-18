@@ -1,6 +1,5 @@
 import atexit
 import os
-import pathlib
 import resource
 import shutil
 import sys
