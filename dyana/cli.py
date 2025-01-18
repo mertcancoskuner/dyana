@@ -100,6 +100,8 @@ def trace(
     loader: str = typer.Option(help="Loader to use.", default="automodel"),
     platform: str | None = typer.Option(help="Platform to use.", default=None),
     output: pathlib.Path = typer.Option(help="Path to the output file.", default="trace.json"),
+    save: list[str] = typer.Option(help="List of file artifacts to save.", default=[]),
+    save_to: pathlib.Path = typer.Option(help="Path to the directory to save the artifacts to.", default="./artifacts"),
     policy: pathlib.Path | None = typer.Option(
         help="Path to a policy or directory with custom tracee policies.", default=None
     ),
@@ -118,7 +120,9 @@ def trace(
         if policy and not policy.exists():
             raise typer.BadParameter(f"policy file or directory not found: {policy}")
 
-        the_loader = Loader(name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose)
+        the_loader = Loader(
+            name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose, save=save, save_to=save_to
+        )
         the_tracer = Tracer(the_loader, policy=policy)
 
         trace = the_tracer.run_trace(allow_network, not no_gpu, allow_volume_write)

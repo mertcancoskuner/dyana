@@ -1,7 +1,7 @@
 /trace.json
 /linux_test_executable
 /malicious.*
-
+/artifacts
 # Testing code
 notebooks/
 

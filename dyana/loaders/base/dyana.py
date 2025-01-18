@@ -1,9 +1,28 @@
+import atexit
+import os
+import pathlib
 import resource
 import shutil
 import sys
 import typing as t
 from contextlib import contextmanager
 from io import StringIO
+
+
+def save_artifacts() -> None:
+    artifacts = os.environ.get("DYANA_SAVE", "").split(",")
+    if artifacts:
+        for artifact in artifacts:
+            try:
+                if os.path.isdir(artifact):
+                    shutil.copytree(artifact, f"/artifacts/{artifact}")
+                elif os.path.isfile(artifact):
+                    shutil.copy(artifact, "/artifacts")
+            except Exception:
+                pass
+
+
+atexit.register(save_artifacts)
 
 
 class Profiler:

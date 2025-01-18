@@ -47,6 +47,8 @@ class Loader:
         build: bool = True,
         platform: str | None = None,
         args: list[str] | None = None,
+        save: list[str] = [],
+        save_to: pathlib.Path = pathlib.Path("./artifacts"),
         verbose: bool = False,
     ):
         # make sure that name does not include a path traversal
@@ -66,6 +68,8 @@ class Loader:
         self.settings: LoaderSettings | None = None
         self.build_args: dict[str, str] | None = None
         self.args: list[ParsedArgument] | None = None
+        self.save: list[str] = save
+        self.save_to: pathlib.Path = save_to.resolve().absolute()
 
         if os.path.exists(self.settings_path):
             with open(self.settings_path) as f:
@@ -180,8 +184,23 @@ class Loader:
 
         try:
             self.output = ""
+            environment = {}
+            if self.save:
+                environment["DYANA_SAVE"] = ",".join(self.save)
+                volumes[str(self.save_to)] = "/artifacts"
+                if not os.path.exists(self.save_to):
+                    os.makedirs(self.save_to)
+
+                print(f":popcorn: [bold]loader[/]: saving artifacts to [dim]{self.save_to}[/]")
+
             self.container = docker.run_detached(
-                self.image, arguments, volumes, allow_network, allow_gpus, allow_volume_write
+                self.image,
+                arguments,
+                volumes,
+                environment=environment,
+                allow_network=allow_network,
+                allow_gpus=allow_gpus,
+                allow_volume_write=allow_volume_write,
             )
             self.container_id = self.container.id
             self.reader_thread = threading.Thread(target=self._reader_thread)

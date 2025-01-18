@@ -79,6 +79,12 @@ Create a trace file for a given loader with:
 dyana trace --loader automodel ... --output trace.json
 ```
 
+To save artifacts from the container, you can pass the `--save` flag:
+
+```bash
+dyana trace --loader pip --package botocore --save /usr/local/bin/jp.py --save-to ./artifacts
+```
+
 It is possible to override the default events that Dyana will trace by passing a [custom policy](https://aquasecurity.github.io/tracee/v0.14/docs/policies/) to the tracer with:
 
 ```bash

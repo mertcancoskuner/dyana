@@ -115,6 +115,7 @@ def run_detached(
     image: str,
     command: list[str],
     volumes: dict[str, str],
+    environment: dict[str, str] | None = None,
     allow_network: bool = False,
     allow_gpus: bool = True,
     allow_volume_write: bool = False,
@@ -125,7 +126,10 @@ def run_detached(
     network_mode = "bridge" if allow_network else "none"
 
     # by default volumes are read-only
-    mounts = {host: {"bind": guest, "mode": "rw" if allow_volume_write else "ro"} for host, guest in volumes.items()}
+    mounts = {
+        host: {"bind": guest, "mode": "rw" if guest == "/artifacts" or allow_volume_write else "ro"}
+        for host, guest in volumes.items()
+    }
 
     # this allows us to log dns requests even if the container is in network mode "none"
     dns = ["127.0.0.1"] if not allow_network else None
@@ -138,6 +142,7 @@ def run_detached(
         image,
         command=command,
         volumes=mounts,
+        environment=environment,
         network_mode=network_mode,
         dns=dns,
         # automatically remove the container after it exits
