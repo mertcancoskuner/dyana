@@ -20,9 +20,9 @@ if __name__ == "__main__":
         package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
         result = subprocess.run(["node", "-e", f"require('{package_name}')"], capture_output=True, text=True)
 
-        profiler.track("require_exit_code", result.returncode)
-        profiler.track("require_stdout", result.stdout)
-        profiler.track("require_stderr", result.stderr)
+        profiler.track("exit_code", result.returncode)
+        profiler.track("stdout", result.stdout)
+        profiler.track("stderr", result.stderr)
 
     except Exception as e:
         profiler.track_error("npm", str(e))

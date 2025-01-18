@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 import subprocess
 import sys
 
@@ -17,6 +18,14 @@ if __name__ == "__main__":
         )
         profiler.track_memory("after_installation")
         profiler.track_disk("after_installation")
+
+        # explicitly require the package to make sure it's loaded
+        package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
+        result = subprocess.run(["python3", "-c", f"import {package_name}"], capture_output=True, text=True)
+
+        profiler.track("exit_code", result.returncode)
+        profiler.track("stdout", result.stdout)
+        profiler.track("stderr", result.stderr)
     except Exception as e:
         profiler.track_error("pip", str(e))
 
