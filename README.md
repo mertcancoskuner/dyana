@@ -184,6 +184,20 @@ dyana trace --loader js --script /path/to/file.js
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
 
+### npm
+
+This loader will install a Javascript package via NPM.
+
+```bash
+dyana trace --loader npm --package express
+
+# you can install a specific version of a package:
+dyana trace --loader npm --package express@1.0.0
+
+# you can also pass extra dependencies to be installed:
+dyana trace --loader npm --package express --extra-dependencies "axios"
+```
+
 ## License
 
 Dyana is released under the [MIT license](LICENSE). Tracee is released under the [Apache 2.0 license](third_party_licenses/APACHE2.md).
