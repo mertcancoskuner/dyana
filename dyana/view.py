@@ -206,7 +206,17 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
                     remote_addr_family = "?"
                     remote_addr_fields = []
 
-                line = f"  * {event['processName']} -> [bold red]{event['syscall']}[/] {remote_addr_family} {', '.join(remote_addr_fields)}"
+                endpoint = "?"
+                if remote_addr and "sa_family" in remote_addr:
+                    family = remote_addr["sa_family"]
+                    if family == "AF_UNIX":
+                        endpoint = remote_addr["sun_path"]
+                    elif family == "AF_INET":
+                        endpoint = f"{remote_addr['sin_addr']}:{remote_addr['sin_port']}"
+                    elif family == "AF_INET6":
+                        endpoint = f"[{remote_addr['sin6_addr']}]:{remote_addr['sin6_port']}"
+
+                line = f"  * [[dim]{event['processId']}[/]] {event['processName']} -> [bold red]{event['syscall']}[/] {endpoint}"
 
                 if line not in visualized:
                     visualized.append(line)
@@ -218,9 +228,9 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
                 answers = [f'{a["name"]}={a["IP"]}' for a in data["answers"]]
 
                 if not answers:
-                    line = f"  * {event['processName']} | [bold red]dns[/] | question={', '.join(question_names)}"
+                    line = f"  * [[dim]{event['processId']}[/]] {event['processName']} | [bold red]dns[/] | question={', '.join(question_names)}"
                 else:
-                    line = f"  * {event['processName']} | [bold red]dns[/] | answer={', '.join(answers)}"
+                    line = f"  * [[dim]{event['processId']}[/]] {event['processName']} | [bold red]dns[/] | answer={', '.join(answers)}"
 
                 if line not in visualized:
                     visualized.append(line)
