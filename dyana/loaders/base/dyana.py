@@ -30,7 +30,7 @@ class Profiler:
         self._disk: dict[str, int] = {"start": get_disk_usage()}
         self._ram: dict[str, int] = {"start": get_peak_rss()}
         self._gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()} if gpu else {}
-        self._network: dict[str, dict[str, int]] = {"start": get_network_stats()}
+        self._network: dict[str, dict[str, dict[str, int]]] = {"start": get_network_stats()}
         self._imports_at_start = get_current_imports()
         self._additionals: dict[str, t.Any] = {}
 
