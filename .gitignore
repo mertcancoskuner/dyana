@@ -2,6 +2,9 @@
 /linux_test_executable
 /malicious.*
 /artifacts
+/dyana-feed*.py
+/feed-data
+
 # Testing code
 notebooks/
 
