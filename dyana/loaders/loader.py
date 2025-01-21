@@ -84,7 +84,7 @@ class Loader:
                 if args:
                     self.build_args = self.settings.parse_build_args(args)
                     self.args = self.settings.parse_args(args)
-                    self.need_artifacts = any(arg.artifact for arg in self.args)
+                    self.need_artifacts = any(arg.artifact for arg in self.args) if self.args else False
         else:
             self.settings = None
 
