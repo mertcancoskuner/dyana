@@ -6,8 +6,6 @@ To see the available loaders and their scriptions, run `dyana loaders`.
 
 The default loader for machine learning models. It will load any model that is compatible with [AutoModel and AutoTokenizer](https://huggingface.co/transformers/v3.0.2/model_doc/auto.html).
 
-#### Example Usage
-
 ```bash
 dyana trace --loader automodel --model /path/to/model --input "This is an example sentence."
 
@@ -25,8 +23,6 @@ dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example se
 
 This loader will load an ELF file and run it.
 
-#### Example Usage
-
 ```bash
 dyana trace --loader elf --elf /path/to/linux_executable
 
@@ -43,8 +39,6 @@ dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 
 This loader will load a Pickle serialized file.
 
-#### Example Usage
-
 ```bash
 dyana trace --loader pickle --pickle /path/to/file.pickle
 
@@ -57,8 +51,6 @@ dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ### python
 
 This loader will load a Python file and run it.
-
-#### Example Usage
 
 ```bash
 dyana trace --loader python --script /path/to/file.py
@@ -73,12 +65,11 @@ dyana trace --loader python --script /path/to/file.py --allow-network
 
 This loader will load a Javascript file and run it via NodeJS.
 
-#### Example Usage
-
 ```bash
 dyana trace --loader js --script /path/to/file.js
 
 # networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
+
 ![JS Loader](assets/loaader-js.png)
