@@ -198,14 +198,6 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
         for event in all:
             if event["eventName"] == "security_socket_connect":
                 remote_addr = [arg["value"] for arg in event["args"] if arg["name"] == "remote_addr"][0]
-
-                if remote_addr and "sa_family" in remote_addr:
-                    remote_addr_family = remote_addr["sa_family"]
-                    remote_addr_fields = [f"{k}={v}" for k, v in remote_addr.items() if k != "sa_family"]
-                else:
-                    remote_addr_family = "?"
-                    remote_addr_fields = []
-
                 endpoint = "?"
                 if remote_addr and "sa_family" in remote_addr:
                     family = remote_addr["sa_family"]
