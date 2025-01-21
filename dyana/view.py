@@ -62,10 +62,10 @@ def view_header(trace: dict[str, t.Any]) -> None:
         print()
 
     if run["stdout"]:
-        print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{run['stdout'][:80].strip()}[/]")
+        print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{run['stdout'].strip()}[/]")
 
     if run["stderr"]:
-        print(f"[bold red]Stderr[/bold red]         : {run['stderr'][:80].strip()}")
+        print(f"[bold red]Stderr[/bold red]         : {run['stderr'].strip()}")
 
     if run["exit_code"]:
         print(f"[bold blue]Exit code[/bold blue]      : {run['exit_code']}")

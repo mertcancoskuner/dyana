@@ -227,12 +227,13 @@ class Loader:
                     print(":popcorn: [bold]loader[/]: [red]timeout reached, killing container[/]")
                     return self._create_errored_run("timeout", "timeout reached, killing container")
 
+            extra_output: str | None = None
             if not self.output.startswith("{"):
                 idx = self.output.find("{")
                 if idx > 0:
-                    before = self.output[:idx]
+                    extra_output = self.output[:idx]
                     self.output = self.output[idx:]
-                    print(f":popcorn: [bold]loader[/]: [dim]{before}[/]")
+                    # print(f":popcorn: [bold]loader[/]: [dim]{extra_output}[/]")
 
             try:
                 run = Run.model_validate_json(self.output)
@@ -241,6 +242,12 @@ class Loader:
                 run.build_args = self.build_args
                 run.arguments = arguments
                 run.volumes = volumes
+
+                if extra_output:
+                    if run.stdout:
+                        run.stdout += extra_output
+                    else:
+                        run.stdout = extra_output
                 return run
             except Exception as e:
                 print(f"Validation error: {e}")
