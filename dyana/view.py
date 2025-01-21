@@ -389,10 +389,17 @@ def view_extra_imports(key: str, value: t.Any) -> None:
 
 
 def view_extra(run: dict[str, t.Any]) -> None:
+    unknown = []
     if "extra" in run and run["extra"]:
         for k, v in run["extra"].items():
             fn_name = f"view_extra_{k}"
             if fn_name in globals():
                 globals()[fn_name](k, v)
-            # else:
-            #    view_extra_unknown(k, v)
+            else:
+                unknown.append(k)
+
+    if unknown:
+        print("[bold yellow]Other Records:[/]")
+        for k in unknown:
+            print(f"  * {k}")
+        print()
