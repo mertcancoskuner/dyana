@@ -213,6 +213,22 @@ dyana trace --loader npm --package express --extra-dependencies "axios"
 
 </details>
 
+<details>
+<summary><b>website</b></summary>
+Opens a website in a headless browser and profiles its performance.
+
+```bash
+dyana trace --loader website --url https://www.google.com
+
+# you can also save a screenshot of the page
+dyana trace --loader website --url https://www.google.com --screenshot
+
+# you can also wait for a specific element to load
+dyana trace --loader website --url https://www.google.com --wait-for "body"
+```
+
+</details>
+
 ## License
 
 Dyana is released under the [MIT license](LICENSE). Tracee is released under the [Apache 2.0 license](third_party_licenses/APACHE2.md).

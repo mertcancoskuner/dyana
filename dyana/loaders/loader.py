@@ -76,6 +76,7 @@ class Loader:
         self.args: list[ParsedArgument] | None = None
         self.save: list[str] | None = save
         self.save_to: pathlib.Path = save_to.resolve().absolute()
+        self.need_artifacts: bool = False
 
         if os.path.exists(self.settings_path):
             with open(self.settings_path) as f:
@@ -83,6 +84,7 @@ class Loader:
                 if args:
                     self.build_args = self.settings.parse_build_args(args)
                     self.args = self.settings.parse_args(args)
+                    self.need_artifacts = any(arg.artifact for arg in self.args)
         else:
             self.settings = None
 
@@ -191,8 +193,10 @@ class Loader:
         try:
             self.output = ""
             environment = {}
-            if self.save:
-                environment["DYANA_SAVE"] = ",".join(self.save)
+            if self.save or self.need_artifacts:
+                if self.save:
+                    environment["DYANA_SAVE"] = ",".join(self.save)
+
                 volumes[str(self.save_to)] = "/artifacts"
                 if not os.path.exists(self.save_to):
                     os.makedirs(self.save_to)
