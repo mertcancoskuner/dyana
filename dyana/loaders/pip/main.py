@@ -6,11 +6,12 @@ import os
 import re
 import subprocess
 import sys
+from typing import Any
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
 
-def find_site_packages():
+def find_site_packages() -> str | None:
     """Find the site-packages directory where pip installs packages."""
     for path in sys.path:
         if path.endswith("site-packages"):
@@ -30,12 +31,12 @@ def debug_package_metadata(package_name: str, profiler: Profiler) -> None:
     egg_info = list(glob.glob(os.path.join(site_packages, f"{package_name}*.egg-info")))
     package_files = list(glob.glob(os.path.join(site_packages, f"{package_name}*")))
 
-    debug_info = {
+    debug_info: dict[str, Any] = {
         "site_packages": site_packages,
         "dist_info_found": dist_info,
         "egg_info_found": egg_info,
         "package_files": package_files,
-        "top_level_contents": {},
+        "top_level_contents": dict[str, str](),
     }
 
     # check top_level.txt
