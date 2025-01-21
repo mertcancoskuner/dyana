@@ -72,4 +72,4 @@ dyana trace --loader js --script /path/to/file.js
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
 
-![JS Loader](assets/loaader-js.png)
+![JS Loader](assets/loader-js.png)
