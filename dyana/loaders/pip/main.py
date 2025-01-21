@@ -22,8 +22,10 @@ if __name__ == "__main__":
 
         # explicitly require the package to make sure it's loaded
         package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
+        # normalize
+        normalized_package_name = package_name.strip().lower().replace("-", "_")
         try:
-            importlib.import_module(package_name)
+            importlib.import_module(normalized_package_name)
         except Exception as e:
             profiler.track("stderr", str(e))
     except Exception as e:
