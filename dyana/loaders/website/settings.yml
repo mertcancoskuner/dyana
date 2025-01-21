@@ -1,7 +1,14 @@
-description: Opens a website in an headless browser.
-network: true
+description: Opens a website in a headless browser and profiles its performance.
 
 args:
   - name: url
     description: URL to open.
     required: true
+  - name: wait-for
+    description: CSS selector to wait for before profiling.
+    required: false
+  - name: timeout
+    description: Timeout in seconds for page load and element wait.
+    required: false
+    type: int
+    default: "60"
