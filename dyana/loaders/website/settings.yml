@@ -19,3 +19,7 @@ args:
   - name: wait-for-timeout
     description: Timeout in seconds for page load and element wait.
     required: false
+
+  - name: performance-log
+    description: Enable advanced performance logging.
+    required: false

@@ -20,6 +20,7 @@ if __name__ == "__main__":
         "--wait-for-timeout", help="Timeout to wait for the CSS selectorin seconds", type=int, default=30
     )
     parser.add_argument("--screenshot", help="Save a screenshot of the page", action="store_true")
+    parser.add_argument("--performance-log", help="Enable performance logging", action="store_true")
     args = parser.parse_args()
 
     # Normalize URL by adding https:// if protocol is missing
@@ -34,6 +35,9 @@ if __name__ == "__main__":
         chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--window-size=1920,1080")
+
+        if args.performance_log:
+            chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 
         service = Service(executable_path=shutil.which("chromedriver"))
         service.start()
@@ -55,6 +59,9 @@ if __name__ == "__main__":
                 profiler.track_error("wait", f"Timeout waiting for element: {args.wait_for}")
 
         profiler.track_memory("after_load")
+
+        if args.performance_log:
+            profiler.track_extra("performance_log", driver.get_log("performance"))
 
         if args.screenshot:
             try:
