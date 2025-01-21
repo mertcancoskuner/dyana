@@ -122,7 +122,7 @@ class Loader:
             raise Exception("Container not created")
 
         # attach to the container's logs with stream=True to get a generator
-        logs = self.container.logs(stream=True, follow=True)
+        logs = self.container.logs(stream=True, follow=True, stdout=True, stderr=True)
 
         # loop while the container is running
         while self.container.status in ["created", "running"]:
@@ -213,7 +213,7 @@ class Loader:
             self.reader_thread.start()
 
             started_at = datetime.now()
-            while self.container.status in ["created", "running"]:
+            while self.container.status in ["created", "running", "removing"]:
                 time.sleep(1.0)
                 try:
                     # refresh container status

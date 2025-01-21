@@ -148,7 +148,7 @@ def run_detached(
         # automatically remove the container after it exits
         remove=True,
         # allocate a pseudo-TTY
-        tty=True,
+        tty=False,
         # keep STDIN open
         stdin_open=True,
         stdout=True,
