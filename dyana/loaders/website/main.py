@@ -13,6 +13,7 @@ from selenium.common.exceptions import TimeoutException
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
+
 def collect_performance_metrics(driver: webdriver.Chrome) -> Dict[str, Any]:
     """Collect detailed performance metrics using Chrome DevTools Protocol."""
     metrics = {}
@@ -33,7 +34,7 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> Dict[str, Any]:
             'domProcessingTime': timing.domComplete - timing.domLoading
         };
     """)
-    metrics['timing'] = navigation_timing
+    metrics["timing"] = navigation_timing
 
     # Memory info
     memory_info = driver.execute_script("""
@@ -43,7 +44,7 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> Dict[str, Any]:
             'usedJSHeapSize': window.performance.memory.usedJSHeapSize
         };
     """)
-    metrics['memory'] = memory_info
+    metrics["memory"] = memory_info
 
     # Resource timing data
     resource_timing = driver.execute_script("""
@@ -55,9 +56,10 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> Dict[str, Any]:
             initiatorType: entry.initiatorType
         }));
     """)
-    metrics['resources'] = resource_timing
+    metrics["resources"] = resource_timing
 
     return metrics
+
 
 def analyze_page_content(driver: webdriver.Chrome) -> Dict[str, Any]:
     """Analyze page content and structure."""
@@ -73,12 +75,18 @@ def analyze_page_content(driver: webdriver.Chrome) -> Dict[str, Any]:
         };
     """)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Profile website performance")
     parser.add_argument("--url", help="URL to open", required=True)
     parser.add_argument("--wait-for", help="CSS selector to wait for", default=None)
     parser.add_argument("--timeout", help="Timeout in seconds", type=int, default=30)
     args = parser.parse_args()
+
+    # Normalize URL by adding https:// if protocol is missing
+    if "://" not in args.url:
+        args.url = f"https://{args.url}"
+
     profiler: Profiler = Profiler()
 
     try:
@@ -117,10 +125,10 @@ if __name__ == "__main__":
             content_analysis = analyze_page_content(driver)
 
             # Get console logs
-            console_logs = driver.get_log('browser')
+            console_logs = driver.get_log("browser")
 
             # Get network logs
-            network_logs = driver.get_log('performance')
+            network_logs = driver.get_log("performance")
 
             # Add all metrics to profiler
             profiler.extra = {
@@ -131,9 +139,7 @@ if __name__ == "__main__":
                 "network_logs": network_logs,
                 "title": driver.title,
                 "url": driver.current_url,
-                "status_code": driver.execute_script(
-                    "return window.performance.getEntries()[0].responseStatus"
-                ),
+                "status_code": driver.execute_script("return window.performance.getEntries()[0].responseStatus"),
             }
         except Exception as e:
             profiler.track_error("metrics", str(e))
