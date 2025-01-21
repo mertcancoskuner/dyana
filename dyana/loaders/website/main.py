@@ -144,7 +144,7 @@ if __name__ == "__main__":
             network_logs = driver.get_log("performance")
 
             # Add all metrics to profiler
-            profiler.extra = {
+            for key, value in {
                 "load_time": load_time,
                 "performance_metrics": metrics,
                 "content_analysis": content_analysis,
@@ -153,14 +153,15 @@ if __name__ == "__main__":
                 "title": driver.title,
                 "url": driver.current_url,
                 "status_code": driver.execute_script("return window.performance.getEntries()[0].responseStatus"),
-            }
+            }.items():
+                profiler.track_extra(key, value)
         except Exception as e:
             profiler.track_error("metrics", str(e))
 
         # Take screenshot
         try:
             screenshot = driver.get_screenshot_as_base64()
-            profiler.extra["screenshot"] = screenshot
+            profiler.track_extra("screenshot", screenshot)
         except Exception as e:
             profiler.track_error("screenshot", str(e))
 

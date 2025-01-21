@@ -394,5 +394,5 @@ def view_extra(run: dict[str, t.Any]) -> None:
             fn_name = f"view_extra_{k}"
             if fn_name in globals():
                 globals()[fn_name](k, v)
-            else:
-                view_extra_unknown(k, v)
+            # else:
+            #    view_extra_unknown(k, v)

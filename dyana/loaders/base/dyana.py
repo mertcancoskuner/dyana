@@ -33,6 +33,7 @@ class Profiler:
         self._network: dict[str, dict[str, dict[str, int]]] = {"start": get_network_stats()}
         self._imports_at_start = get_current_imports()
         self._additionals: dict[str, t.Any] = {}
+        self._extra: dict[str, t.Any] = {}
 
     def track_memory(self, event: str) -> None:
         self._ram[event] = get_peak_rss()
@@ -51,6 +52,9 @@ class Profiler:
     def track(self, key: str, value: t.Any) -> None:
         self._additionals[key] = value
 
+    def track_extra(self, key: str, value: t.Any) -> None:
+        self._extra[key] = value
+
     def as_dict(self) -> dict[str, t.Any]:
         imports_at_end = get_current_imports()
         imported = {k: imports_at_end[k] for k in imports_at_end if k not in self._imports_at_start}
@@ -63,7 +67,7 @@ class Profiler:
             "disk": self._disk,
             "network": self._network,
             "errors": self._errors,
-            "extra": {"imports": imported},
+            "extra": {"imports": imported, **self._extra},
         } | self._additionals
 
         if self._gpu:

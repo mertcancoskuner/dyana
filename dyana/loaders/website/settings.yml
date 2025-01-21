@@ -11,5 +11,3 @@ args:
   - name: wait-for-timeout
     description: Timeout in seconds for page load and element wait.
     required: false
-    type: int
-    default: "60"
