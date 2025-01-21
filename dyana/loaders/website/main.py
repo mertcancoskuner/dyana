@@ -2,19 +2,20 @@ import argparse
 import json
 import shutil
 import time
-from typing import Dict, Any
+import typing
+from typing import Any
 
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
 
-def collect_performance_metrics(driver: webdriver.Chrome) -> Dict[str, Any]:
+def collect_performance_metrics(driver: webdriver.Chrome) -> dict[str, Any]:
     """Collect detailed performance metrics using Chrome DevTools Protocol."""
     metrics = {}
 
@@ -61,9 +62,11 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> Dict[str, Any]:
     return metrics
 
 
-def analyze_page_content(driver: webdriver.Chrome) -> Dict[str, Any]:
+def analyze_page_content(driver: webdriver.Chrome) -> dict[str, Any]:
     """Analyze page content and structure."""
-    return driver.execute_script("""
+    return typing.cast(
+        dict[str, Any],
+        driver.execute_script("""
         return {
             'elements': document.getElementsByTagName('*').length,
             'images': document.getElementsByTagName('img').length,
@@ -73,7 +76,8 @@ def analyze_page_content(driver: webdriver.Chrome) -> Dict[str, Any]:
             'iframes': document.getElementsByTagName('iframe').length,
             'documentSize': document.documentElement.innerHTML.length,
         };
-    """)
+    """),
+    )
 
 
 if __name__ == "__main__":
@@ -159,7 +163,7 @@ if __name__ == "__main__":
         try:
             driver.quit()
             profiler.track_memory("after_quit")
-        except:
+        except Exception:
             pass
 
     print(json.dumps(profiler.as_dict()))
