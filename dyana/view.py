@@ -216,13 +216,13 @@ def view_network_usage(run: dict[str, t.Any]) -> None:
                 prev_stage = None
                 for stage in stages:
                     if prev_stage is None:
-                        print(
-                            f"    {stage} : rx={sizeof_fmt(network[stage][interface]["rx"])} tx={sizeof_fmt(network[stage][interface]["tx"])}"
-                        )
+                        rx_fmt = sizeof_fmt(network[stage][interface]["rx"])
+                        tx_fmt = sizeof_fmt(network[stage][interface]["tx"])
+                        print(f"    {stage} : rx={rx_fmt} tx={tx_fmt}")
                     else:
-                        print(
-                            f"    {stage} : rx={delta_fmt(network[prev_stage][interface]["rx"], network[stage][interface]["rx"])} tx={delta_fmt(network[prev_stage][interface]["tx"], network[stage][interface]["tx"])}"
-                        )
+                        rx_fmt = delta_fmt(network[prev_stage][interface]["rx"], network[stage][interface]["rx"])
+                        tx_fmt = delta_fmt(network[prev_stage][interface]["tx"], network[stage][interface]["tx"])
+                        print(f"    {stage} : rx={rx_fmt} tx={tx_fmt}")
                     prev_stage = stage
 
                 print()
