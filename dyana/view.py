@@ -273,7 +273,6 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
                     print(line)
 
         print()
-        quit()
 
 
 def view_disk_events(trace: dict[str, t.Any]) -> None:
