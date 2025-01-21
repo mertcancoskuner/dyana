@@ -9,5 +9,6 @@ ARG EXTRA_DEPENDENCIES
 RUN if [ -n "$EXTRA_DEPENDENCIES" ]; then apt-get update && apt-get install -yq $EXTRA_DEPENDENCIES; fi
 
 RUN pip3 install cython
+RUN pip3 install --upgrade setuptools
 
 ENTRYPOINT ["python3", "-W", "ignore", "main.py"]
