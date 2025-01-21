@@ -184,11 +184,55 @@ def view_process_executions(trace: dict[str, t.Any]) -> None:
         print()
 
 
+def view_network_usage(run: dict[str, t.Any]) -> None:
+    has_network_usage = "network" in run and run["network"]
+    if has_network_usage:
+        network = run["network"]
+        stages = list(network.keys())
+        interfaces = list(network[stages[0]].keys())
+        any_change = False
+
+        for interface in interfaces:
+            for stage in stages:
+                if network[stage][interface]["rx"] > 0 or network[stage][interface]["tx"] > 0:
+                    any_change = True
+                    break
+
+        if any_change:
+            print("[bold yellow]Network Usage:[/]")
+
+            for interface in interfaces:
+                # Check if there were any network changes across stages
+                had_network_activity = False
+                for stage in stages:
+                    if network[stage][interface]["rx"] > 0 or network[stage][interface]["tx"] > 0:
+                        had_network_activity = True
+                        break
+
+                if not had_network_activity:
+                    continue
+
+                print(f"  [bold]{interface}[/]")
+                prev_stage = None
+                for stage in stages:
+                    if prev_stage is None:
+                        print(
+                            f"    {stage} : rx={sizeof_fmt(network[stage][interface]["rx"])} tx={sizeof_fmt(network[stage][interface]["tx"])}"
+                        )
+                    else:
+                        print(
+                            f"    {stage} : rx={delta_fmt(network[prev_stage][interface]["rx"], network[stage][interface]["rx"])} tx={delta_fmt(network[prev_stage][interface]["tx"], network[stage][interface]["tx"])}"
+                        )
+                    prev_stage = stage
+
+                print()
+
+
 def view_network_events(trace: dict[str, t.Any]) -> None:
     connects = [event for event in trace["events"] if event["eventName"] == "security_socket_connect"]
     dns_queries = [event for event in trace["events"] if event["eventName"] == "net_packet_dns"]
     if connects or dns_queries:
-        print("[bold yellow]Network:[/]")
+        print("[bold yellow]Network Activity:[/]")
 
         all = connects + dns_queries
         all.sort(key=lambda e: e["timestamp"])
@@ -229,6 +273,7 @@ def view_network_events(trace: dict[str, t.Any]) -> None:
                     print(line)
 
         print()
+        quit()
 
 
 def view_disk_events(trace: dict[str, t.Any]) -> None:

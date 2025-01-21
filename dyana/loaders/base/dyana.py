@@ -30,6 +30,7 @@ class Profiler:
         self._disk: dict[str, int] = {"start": get_disk_usage()}
         self._ram: dict[str, int] = {"start": get_peak_rss()}
         self._gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()} if gpu else {}
+        self._network: dict[str, dict[str, int]] = {"start": get_network_stats()}
         self._imports_at_start = get_current_imports()
         self._additionals: dict[str, t.Any] = {}
 
@@ -41,6 +42,9 @@ class Profiler:
     def track_disk(self, event: str) -> None:
         self._disk[event] = get_disk_usage()
 
+    def track_network(self, event: str) -> None:
+        self._network[event] = get_network_stats()
+
     def track_error(self, event: str, error: str) -> None:
         self._errors[event] = error
 
@@ -51,9 +55,13 @@ class Profiler:
         imports_at_end = get_current_imports()
         imported = {k: imports_at_end[k] for k in imports_at_end if k not in self._imports_at_start}
 
+        if len(self._network.keys()) == 1:
+            self.track_network("end")
+
         as_dict: dict[str, t.Any] = {
             "ram": self._ram,
             "disk": self._disk,
+            "network": self._network,
             "errors": self._errors,
             "extra": {"imports": imported},
         } | self._additionals
@@ -142,3 +150,29 @@ def get_current_imports() -> dict[str, str | None]:
             imports[module_name] = module.__dict__["__file__"] if "__file__" in module.__dict__ else None
 
     return imports
+
+
+def get_network_stats() -> dict[str, dict[str, int]]:
+    """
+    Parse /proc/net/dev and return a dictionary of network interface statistics.
+    Returns a dictionary where each key is an interface name and each value is
+    a dictionary containing bytes_received and bytes_sent.
+    """
+    stats: dict[str, dict[str, int]] = {}
+
+    with open("/proc/net/dev") as f:
+        # skip the first two header lines
+        next(f)
+        next(f)
+
+        for line in f:
+            # split the line into interface name and statistics
+            parts = line.strip().split(":")
+            if len(parts) != 2:
+                continue
+
+            interface = parts[0].strip()
+            values = parts[1].split()
+            stats[interface] = {"rx": int(values[0]), "tx": int(values[8])}
+
+    return stats

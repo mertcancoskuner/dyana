@@ -17,6 +17,7 @@ from dyana.view import (
     view_gpus,
     view_header,
     view_network_events,
+    view_network_usage,
     view_process_executions,
     view_ram,
     view_security_events,
@@ -153,6 +154,7 @@ def summary(trace_path: pathlib.Path = typer.Option(help="Path to the trace file
     view_disk_usage(trace["run"])
 
     view_process_executions(trace)
+    view_network_usage(trace["run"])
     view_network_events(trace)
     view_disk_events(trace)
     view_security_events(trace)

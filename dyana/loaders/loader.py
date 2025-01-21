@@ -23,6 +23,11 @@ class GpuDeviceUsage(BaseModel):
     free_memory: int
 
 
+class NetworkDeviceUsage(BaseModel):
+    rx: int
+    tx: int
+
+
 class Run(BaseModel):
     loader_name: str | None = None
     build_platform: str | None = None
@@ -33,6 +38,7 @@ class Run(BaseModel):
     ram: dict[str, int] | None = None
     gpu: dict[str, list[GpuDeviceUsage]] | None = None
     disk: dict[str, int] | None = None
+    network: dict[str, dict[str, NetworkDeviceUsage]] | None = None
     stdout: str | None = None
     stderr: str | None = None
     exit_code: int | None = None
