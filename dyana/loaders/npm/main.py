@@ -17,7 +17,10 @@ if __name__ == "__main__":
         profiler.track_disk("after_installation")
 
         # explicitly require the package to make sure it's loaded
-        package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
+        package_name = args.package
+        if package_name.startswith("@"):
+            package_name = package_name[1:]
+        package_name = re.split("[^a-zA-Z0-9_-]", package_name)[0]
         result = subprocess.run(["node", "-e", f"require('{package_name}')"], capture_output=True, text=True)
 
         profiler.track("exit_code", result.returncode)
