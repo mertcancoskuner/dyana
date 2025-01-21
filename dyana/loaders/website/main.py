@@ -20,7 +20,8 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> dict[str, Any]:
     metrics = {}
 
     # Navigation Timing API metrics
-    navigation_timing = driver.execute_script("""
+    navigation_timing = driver.execute_script(
+        """
         const performance = window.performance;
         const timing = performance.timing;
         return {
@@ -34,21 +35,25 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> dict[str, Any]:
             'serverResponseTime': timing.responseEnd - timing.requestStart,
             'domProcessingTime': timing.domComplete - timing.domLoading
         };
-    """)
+    """
+    )
     metrics["timing"] = navigation_timing
 
     # Memory info
-    memory_info = driver.execute_script("""
+    memory_info = driver.execute_script(
+        """
         return {
             'jsHeapSizeLimit': window.performance.memory.jsHeapSizeLimit,
             'totalJSHeapSize': window.performance.memory.totalJSHeapSize,
             'usedJSHeapSize': window.performance.memory.usedJSHeapSize
         };
-    """)
+    """
+    )
     metrics["memory"] = memory_info
 
     # Resource timing data
-    resource_timing = driver.execute_script("""
+    resource_timing = driver.execute_script(
+        """
         return performance.getEntriesByType('resource').map(entry => ({
             name: entry.name,
             entryType: entry.entryType,
@@ -56,7 +61,8 @@ def collect_performance_metrics(driver: webdriver.Chrome) -> dict[str, Any]:
             duration: entry.duration,
             initiatorType: entry.initiatorType
         }));
-    """)
+    """
+    )
     metrics["resources"] = resource_timing
 
     return metrics
@@ -66,7 +72,8 @@ def analyze_page_content(driver: webdriver.Chrome) -> dict[str, Any]:
     """Analyze page content and structure."""
     return typing.cast(
         dict[str, Any],
-        driver.execute_script("""
+        driver.execute_script(
+            """
         return {
             'elements': document.getElementsByTagName('*').length,
             'images': document.getElementsByTagName('img').length,
@@ -76,7 +83,8 @@ def analyze_page_content(driver: webdriver.Chrome) -> dict[str, Any]:
             'iframes': document.getElementsByTagName('iframe').length,
             'documentSize': document.documentElement.innerHTML.length,
         };
-    """),
+    """
+        ),
     )
 
 
@@ -84,7 +92,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Profile website performance")
     parser.add_argument("--url", help="URL to open", required=True)
     parser.add_argument("--wait-for", help="CSS selector to wait for", default=None)
-    parser.add_argument("--timeout", help="Timeout in seconds", type=int, default=30)
+    parser.add_argument(
+        "--wait-for-timeout", help="Timeout to wait for the CSS selectorin seconds", type=int, default=30
+    )
     args = parser.parse_args()
 
     # Normalize URL by adding https:// if protocol is missing
@@ -113,7 +123,7 @@ if __name__ == "__main__":
         # Wait for specific element if requested
         if args.wait_for:
             try:
-                WebDriverWait(driver, args.timeout).until(
+                WebDriverWait(driver, args.wait_for_timeout).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, args.wait_for))
                 )
             except TimeoutException:

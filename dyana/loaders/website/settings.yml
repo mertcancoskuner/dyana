@@ -8,7 +8,7 @@ args:
   - name: wait-for
     description: CSS selector to wait for before profiling.
     required: false
-  - name: timeout
+  - name: wait-for-timeout
     description: Timeout in seconds for page load and element wait.
     required: false
     type: int
