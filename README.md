@@ -128,6 +128,9 @@ dyana trace --model /path/to/model --input "This is an example sentence."
 
 # in case the model requires extra dependencies, you can pass them as:
 dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example sentence." --extra-requirements "protobuf fugashi ipadic"
+
+# to perform tokenizer and model initialization without loading weights.
+dyana trace --model /path/to/model --low-memory
 ```
 </details>
 

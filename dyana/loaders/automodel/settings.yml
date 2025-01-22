@@ -13,3 +13,7 @@ args:
     description: Input for the model.
     default: This is an example sentence.
     required: false
+
+  - name: low-memory
+    description: Perform tokenizer and model initialization without loading weights.
+    required: false
