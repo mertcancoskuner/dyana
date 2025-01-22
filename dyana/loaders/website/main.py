@@ -2,42 +2,15 @@ import argparse
 import json
 import os
 import shutil
-import time
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from dyana import Profiler  # type: ignore[attr-defined]
-
-
-def setup_chrome_options():
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    # disable Google services and non-critical features that can cause hangs
-    chrome_options.add_argument("--disable-sync")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--disable-background-networking")
-    chrome_options.add_argument("--disable-domain-reliability")
-    chrome_options.add_argument("--disable-client-side-phishing-detection")
-    chrome_options.add_argument("--disable-component-update")
-    chrome_options.binary_location = "/usr/bin/chromium-browser"
-
-    # force DNS lookups for each request
-    chrome_options.add_argument("--dns-prefetch-disable")
-    chrome_options.add_argument("--disable-http-cache")
-    chrome_options.add_argument("--disable-browser-side-navigation")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-
-    # network logging prefs
-    chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL", "browser": "ALL", "network": "ALL"})
-    return chrome_options
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Profile website performance")
@@ -50,45 +23,45 @@ if __name__ == "__main__":
     parser.add_argument("--performance-log", help="Enable performance logging", action="store_true")
     args = parser.parse_args()
 
-    # normalize URL - https:// if protocol is missing
+    # Normalize URL by adding https:// if protocol is missing
     if "://" not in args.url:
         args.url = f"https://{args.url}"
 
     profiler: Profiler = Profiler()
 
     try:
-        chrome_options = setup_chrome_options()
-        service = webdriver.ChromeService(executable_path="/usr/lib/chromium/chromedriver")
-        driver = webdriver.Chrome(options=chrome_options, service=service)
-
-        # set shorter timeouts
-        driver.set_page_load_timeout(15)
-        driver.implicitly_wait(5)
-
-        profiler.track_memory("before_load")
-        try:
-            profiler.track("dns_start", time.time())
-            driver.get(args.url)
-            profiler.track("dns_end", time.time())
-        except TimeoutException:
-            profiler.track_error("page_load", f"Timeout loading page: {args.url}")
-            # continue execution to capture any partial data
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--window-size=1920,1080")
 
         if args.performance_log:
-            network_logs = driver.get_log("performance")
-            profiler.track_extra("network_logs", network_logs)
-            browser_logs = driver.get_log("browser")
-            profiler.track_extra("browser_logs", browser_logs)
+            chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 
-        profiler.track_memory("after_load")
+        service = Service(executable_path=shutil.which("chromedriver"))
+        service.start()
+
+        driver = webdriver.Chrome(options=chrome_options, service=service)
+        driver.implicitly_wait(10)
+
+        profiler.track_memory("before_load")
+
+        driver.get(args.url)
 
         if args.wait_for:
+            # Wait for specific element if requested
             try:
                 WebDriverWait(driver, args.wait_for_timeout).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, args.wait_for))
                 )
             except TimeoutException:
                 profiler.track_error("wait", f"Timeout waiting for element: {args.wait_for}")
+
+        profiler.track_memory("after_load")
+
+        if args.performance_log:
+            profiler.track_extra("performance_log", driver.get_log("performance"))
 
         if args.screenshot:
             try:
@@ -103,10 +76,9 @@ if __name__ == "__main__":
         profiler.track_error("chrome", str(e))
     finally:
         try:
-            if "driver" in locals():
-                driver.quit()
-        except:
+            driver.quit()
+            profiler.track_memory("after_quit")
+        except Exception:
             pass
 
-        # ensure we always output something
-        print(json.dumps(profiler.as_dict()))
+    print(json.dumps(profiler.as_dict()))
