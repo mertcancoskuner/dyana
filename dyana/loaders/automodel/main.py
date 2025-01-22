@@ -4,8 +4,6 @@ import logging
 import os
 import typing as t
 
-logging.disable(logging.ERROR)
-
 import torch
 from accelerate import init_empty_weights
 from transformers import AutoConfig, AutoModel, AutoTokenizer
@@ -13,6 +11,8 @@ from transformers import AutoConfig, AutoModel, AutoTokenizer
 from dyana import Profiler  # type: ignore[attr-defined]
 
 if __name__ == "__main__":
+    logging.disable(logging.ERROR)
+
     parser = argparse.ArgumentParser(description="Profile model files")
     parser.add_argument("--model", help="Path to HF model directory", required=True)
     parser.add_argument("--input", help="The input sentence", default="This is an example sentence.")
