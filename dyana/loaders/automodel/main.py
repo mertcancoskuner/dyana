@@ -1,7 +1,10 @@
 import argparse
 import json
+import logging
 import os
 import typing as t
+
+logging.disable(logging.ERROR)
 
 import torch
 from accelerate import init_empty_weights
