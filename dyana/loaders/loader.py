@@ -35,6 +35,7 @@ class Run(BaseModel):
     arguments: list[str] | None = None
     volumes: dict[str, str] | None = None
     errors: dict[str, str] | None = None
+    warnings: dict[str, str] | None = None
     ram: dict[str, int] | None = None
     gpu: dict[str, list[GpuDeviceUsage]] | None = None
     disk: dict[str, int] | None = None

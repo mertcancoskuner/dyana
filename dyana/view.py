@@ -61,6 +61,14 @@ def view_header(trace: dict[str, t.Any]) -> None:
                 print(f"  * [b]{group}[/]: {error}")
         print()
 
+    if run["warnings"]:
+        print()
+        print("[bold yellow]Warnings:[/bold yellow]\n")
+        for group, warning in run["warnings"].items():
+            if warning:
+                print(f"  * [b]{group}[/]: {warning}")
+        print()
+
     if run["stdout"]:
         print(f"[bold yellow]Stdout[/bold yellow]         : [dim]{run['stdout'].strip()}[/]")
 

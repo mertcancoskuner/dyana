@@ -27,6 +27,7 @@ atexit.register(save_artifacts)
 class Profiler:
     def __init__(self, gpu: bool = False):
         self._errors: dict[str, str] = {}
+        self._warnings: dict[str, str] = {}
         self._disk: dict[str, int] = {"start": get_disk_usage()}
         self._ram: dict[str, int] = {"start": get_peak_rss()}
         self._gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()} if gpu else {}
@@ -49,6 +50,9 @@ class Profiler:
     def track_error(self, event: str, error: str) -> None:
         self._errors[event] = error
 
+    def track_warning(self, event: str, warning: str) -> None:
+        self._warnings[event] = warning
+
     def track(self, key: str, value: t.Any) -> None:
         self._additionals[key] = value
 
@@ -67,6 +71,7 @@ class Profiler:
             "disk": self._disk,
             "network": self._network,
             "errors": self._errors,
+            "warnings": self._warnings,
             "extra": {"imports": imported, **self._extra},
         } | self._additionals
 

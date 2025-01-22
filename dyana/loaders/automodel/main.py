@@ -63,6 +63,8 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     outputs = model(**inputs)
                     profiler.track_memory("after_model_inference")
+            else:
+                profiler.track_warning("model", "tokenizer not found, inference skipped")
 
     except Exception as e:
         profiler.track_error("model", str(e))
