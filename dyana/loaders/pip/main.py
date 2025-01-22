@@ -63,53 +63,33 @@ def get_package_import_names(package_name: str) -> list[str]:
         package_name,
         base_name,
         base_name.lower(),
-        base_name.title(),
-        base_name.replace("_", ""),
-        "".join(w.capitalize() for w in base_name.split("_")),
-        "".join(w.capitalize() for w in package_name.split("-")),
     ]
 
+    # filter out standard library modules
+    stdlib_modules = sys.stdlib_module_names
+
     for variant in variations:
-        # check dist-info directory
+        # Only look in site-packages directory
+        package_path = os.path.join(site_packages, variant)
+        if os.path.exists(package_path):
+            if os.path.isfile(package_path + ".py"):
+                import_names.add(variant)
+            elif os.path.isdir(package_path) and os.path.exists(os.path.join(package_path, "__init__.py")):
+                import_names.add(variant)
+
+        # check dist-info directory for this specific variant
         dist_info_pattern = os.path.join(site_packages, f"{variant}*.dist-info")
         for dist_info_dir in glob.glob(dist_info_pattern):
-            # try reading entry_points.txt
-            entry_points = os.path.join(dist_info_dir, "entry_points.txt")
-            if os.path.exists(entry_points):
-                with open(entry_points) as f:
-                    for line in f:
-                        if line.startswith("[console_scripts]"):
-                            continue
-                        if " = " in line:
-                            module = line.split(" = ")[1].split(":")[0].strip()
-                            import_names.add(module)
-
             # try top_level.txt
             top_level = os.path.join(dist_info_dir, "top_level.txt")
             if os.path.exists(top_level):
                 with open(top_level) as f:
-                    import_names.update(name.strip() for name in f.readlines() if name.strip())
+                    for name in f.readlines():
+                        name = name.strip()
+                        if name and name not in stdlib_modules:
+                            import_names.add(name)
 
-            # check METADATA for imports
-            metadata = os.path.join(dist_info_dir, "METADATA")
-            if os.path.exists(metadata):
-                with open(metadata) as f:
-                    for line in f:
-                        if line.startswith("Name: "):
-                            name = line.split(": ")[1].strip()
-                            import_names.add(name.replace("-", "_"))
-
-    # look for site-packages actual files
-    for variant in variations:
-        package_pattern = os.path.join(site_packages, f"{variant}*")
-        for item in glob.glob(package_pattern):
-            basename = os.path.basename(item)
-            if basename.endswith(".py"):
-                import_names.add(basename[:-3])
-            elif os.path.isdir(item) and os.path.exists(os.path.join(item, "__init__.py")):
-                import_names.add(basename)
-
-    return list(import_names)
+    return [name for name in import_names if name not in stdlib_modules]
 
 
 if __name__ == "__main__":
