@@ -24,7 +24,7 @@ dyana trace --model /path/to/model --input "This is an example sentence."
 dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example sentence." --extra-requirements "protobuf fugashi ipadic"
 ```
 
-![AutoModel Loader](loader-automodel.png)
+![AutoModel Loader](assets/loader-automodel.png)
 
 ### ELF
 
@@ -48,7 +48,7 @@ dyana trace --loader elf --elf /path/to/linux_executable --platform linux/amd64
 dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 ```
 
-![ELF Loader](loader-elf.png)
+![ELF Loader](assets/loader-elf.png)
 
 ### pickle
 
@@ -69,7 +69,7 @@ dyana trace --loader pickle --pickle /path/to/file.pickle
 dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
 
-![Pickle Loader](loader-pickle.png)
+![Pickle Loader](assets/loader-pickle.png)
 
 ### python
 
@@ -91,7 +91,7 @@ dyana trace --loader python --script /path/to/file.py
 dyana trace --loader python --script /path/to/file.py --allow-network
 ```
 
-![Python Loader](loader-python.png)
+![Python Loader](assets/loader-python.png)
 
 ### JS
 
@@ -112,4 +112,4 @@ dyana trace --loader js --script /path/to/file.js
 # Networking is disabled by default. If you need to allow it, you can pass the --allow-network flag:
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
-![JS Loader](loader-js.png)
+![JS Loader](assets/loader-js.png)
