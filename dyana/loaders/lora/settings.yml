@@ -1,0 +1,10 @@
+description: Loads LoRA adapters via PEFT.
+
+build_args:
+  extra-requirements: EXTRA_REQUIREMENTS
+
+args:
+  - name: adapter
+    description: Path to the LoRA adapter to profile.
+    required: true
+    volume: true

@@ -137,6 +137,16 @@ dyana trace --model /path/to/model --low-memory
 </details>
 
 <details>
+<summary><b>lora</b></summary>
+
+Loads PEFT compatible LoRA adapters.
+
+```bash
+dyana trace --loader lora --adapter /path/to/adapter
+```
+</details>
+
+<details>
 <summary><b>elf</b></summary>
 This loader will load an ELF file and run it.
 
