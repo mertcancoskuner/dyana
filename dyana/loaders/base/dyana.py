@@ -1,6 +1,5 @@
 import atexit
 import os
-import resource
 import shutil
 import sys
 import typing as t
