@@ -84,7 +84,7 @@ def view_header(trace: dict[str, t.Any]) -> None:
 def view_ram(run: dict[str, t.Any]) -> None:
     ram = run["ram"]
     if ram:
-        print("[bold yellow]RAM:[/]")
+        print("[bold yellow]RAM Usage:[/]")
         ram_stages = list(ram.keys())
         prev_stage = None
         for stage in ram_stages:
@@ -117,7 +117,7 @@ def view_gpus(run: dict[str, t.Any]) -> None:
                 changes.append(change)
 
             if any(changes):
-                print("[bold green]GPU:[/]")
+                print("[bold green]GPU Usage:[/]")
                 for i in range(num_gpus):
                     if not changes[i]:
                         continue
