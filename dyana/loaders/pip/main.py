@@ -107,7 +107,7 @@ if __name__ == "__main__":
                     pass
 
         if not import_success:
-            profiler.track_error("pip", "could not find import name for package")
+            profiler.track_warning("pip", "could not find import name for package")
         else:
             profiler.track_disk("after_import")
 
