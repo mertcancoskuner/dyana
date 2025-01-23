@@ -117,9 +117,9 @@ def get_peak_rss() -> int:
     """
     Get the combined RSS memory usage of the current process and all its child processes.
     """
-    loader_process = psutil.Process()
-    loader_rss = loader_process.memory_info().rss
-    children_rss = 0
+    loader_process: psutil.Process = psutil.Process()
+    loader_rss: int = loader_process.memory_info().rss
+    children_rss: int = 0
 
     for child in loader_process.children(recursive=True):
         try:
