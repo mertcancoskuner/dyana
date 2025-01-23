@@ -6,7 +6,6 @@ import os
 import re
 import subprocess
 import sys
-from typing import Any
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
@@ -19,56 +18,32 @@ def find_site_packages() -> str | None:
     return None
 
 
-def debug_package_metadata(package_name: str, profiler: Profiler) -> None:
-    """Debug helper to inspect package metadata files."""
-    site_packages = find_site_packages()
-    if not site_packages:
-        profiler.track("debug", "Could not find site-packages directory")
-        return
-
-    # list related files
-    dist_info = list(glob.glob(os.path.join(site_packages, f"{package_name}*.dist-info")))
-    egg_info = list(glob.glob(os.path.join(site_packages, f"{package_name}*.egg-info")))
-    package_files = list(glob.glob(os.path.join(site_packages, f"{package_name}*")))
-
-    debug_info: dict[str, Any] = {
-        "site_packages": site_packages,
-        "dist_info_found": dist_info,
-        "egg_info_found": egg_info,
-        "package_files": package_files,
-        "top_level_contents": dict[str, str](),
-    }
-
-    # check top_level.txt
-    for d in dist_info + egg_info:
-        top_level = os.path.join(d, "top_level.txt")
-        if os.path.exists(top_level):
-            with open(top_level) as f:
-                debug_info["top_level_contents"][d] = f.read().strip()
-
-    profiler.track("debug", debug_info)
-
-
-def get_package_import_names(package_name: str) -> list[str]:
+def get_package_import_names(package_name: str) -> set[str]:
     """Get possible import names for a package using various methods."""
+    importlib.invalidate_caches()
+
     site_packages = find_site_packages()
     if not site_packages:
         return []
 
-    import_names = set()
-
     # look for package name variations
     base_name = package_name.replace("-", "_")
-    variations = [
-        package_name,
-        base_name,
-        base_name.lower(),
-    ]
+    variations = [package_name, base_name, base_name.lower()]
 
-    # filter out standard library modules
-    stdlib_modules = sys.stdlib_module_names
+    try:
+        # some packages have a different casing ( upfilelive -> UpFileLive ) and the simplest
+        # way to find the correct name is to use the pip show command
+        pip_name = (
+            subprocess.check_output(f"{sys.executable} -m pip show {package_name} | grep Name", shell=True, text=True)
+            .split(":")[1]
+            .strip()
+        )
+        variations.append(pip_name)
+    except Exception:
+        pass
 
-    for variant in variations:
+    import_names = set()
+    for variant in set(variations):
         # Only look in site-packages directory
         package_path = os.path.join(site_packages, variant)
         if os.path.exists(package_path):
@@ -86,10 +61,10 @@ def get_package_import_names(package_name: str) -> list[str]:
                 with open(top_level) as f:
                     for name in f.readlines():
                         name = name.strip()
-                        if name and name not in stdlib_modules:
+                        if name and name not in sys.stdlib_module_names and name != "test" and name != "tests":
                             import_names.add(name)
 
-    return [name for name in import_names if name not in stdlib_modules]
+    return import_names
 
 
 if __name__ == "__main__":
@@ -105,51 +80,36 @@ if __name__ == "__main__":
         profiler.track_memory("after_installation")
         profiler.track_disk("after_installation")
 
-        importlib.invalidate_caches()
-        site_packages = find_site_packages()
-        if site_packages and site_packages not in sys.path:
-            sys.path.append(site_packages)
-
         # get base package name (remove version, etc)
         package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
-
-        debug_package_metadata(package_name, profiler)
-
+        normalized_name = package_name.strip().lower().replace("-", "_")
         import_success = False
-        import_errors = []
-        successful_name = None
 
-        import_names = get_package_import_names(package_name)
-
-        print(f"\nAttempting imports with names: {import_names}\n")
-
-        if import_names:
-            import_names.sort(key=len)
-
-            for name in import_names:
-                try:
-                    importlib.import_module(name)
-                    import_success = True
-                    successful_name = name
-                    print(f"\nSuccessfully imported as '{name}'\n")
-                    break
-                except ImportError as e:
-                    import_errors.append(f"Import name '{name}': {str(e)}")
-
-        if not import_success:
-            normalized_name = package_name.strip().lower().replace("-", "_")
+        # first attempt to import directly
+        for name in [package_name, normalized_name]:
             try:
                 importlib.import_module(normalized_name)
                 import_success = True
-                successful_name = normalized_name
-                print(f"\nSuccessfully imported using normalized name '{normalized_name}'\n")
-            except ImportError as e:
-                import_errors.append(f"Normalized name '{normalized_name}': {str(e)}")
+                print(f"imported as {name}")
+                break
+            except ImportError as _:
+                pass
 
-        if import_success:
-            profiler.track("result", f"Successfully imported as '{successful_name}'")
+        if not import_success:
+            import_names = get_package_import_names(package_name)
+            for name in sorted(import_names, key=len):
+                try:
+                    importlib.import_module(name)
+                    import_success = True
+                    print(f"imported as {name}")
+                    break
+                except ImportError as _:
+                    pass
+
+        if not import_success:
+            profiler.track_error("pip", "could not find import name for package")
         else:
-            profiler.track("stderr", "\n".join(import_errors))
+            profiler.track_disk("after_import")
 
     except Exception as e:
         profiler.track_error("pip", str(e))
