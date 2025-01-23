@@ -65,6 +65,7 @@ class Loader:
         self.image_name = name
         self.timeout = timeout
         self.base_lib_path = os.path.join(loaders.__path__[0], "base/dyana.py")
+        self.base_requirements_path = os.path.join(loaders.__path__[0], "base/dyana-requirements.txt")
         self.path = os.path.join(loaders.__path__[0], name)
         self.reader_thread: threading.Thread | None = None
         self.container: docker_pkg.models.containers.Container | None = None
@@ -109,6 +110,7 @@ class Loader:
             # TODO: ideally the file name should be randomized in order to avoid low-hanging fruits in terms
             # of sandbox detection techniques
             shutil.copy(self.base_lib_path, os.path.join(self.path, "dyana.py"))
+            shutil.copy(self.base_requirements_path, os.path.join(self.path, "dyana-requirements.txt"))
 
             self.image = docker.build(
                 self.path, self.image_name, platform=self.platform, build_args=self.build_args, verbose=verbose

@@ -15,7 +15,12 @@ ENV PATH="/usr/lib/chromium/:${PATH}"
 RUN pip install --no-cache-dir selenium
 
 WORKDIR /app
+
+RUN apk add --no-cache build-base linux-headers
 COPY dyana.py .
+COPY dyana-requirements.txt .
+RUN pip install --no-cache-dir --root-user-action=ignore -r dyana-requirements.txt
+
 COPY main.py .
 
 ENTRYPOINT ["python3", "-W", "ignore", "main.py"]

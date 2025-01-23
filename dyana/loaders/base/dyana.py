@@ -7,6 +7,8 @@ import typing as t
 from contextlib import contextmanager
 from io import StringIO
 
+import psutil
+
 
 def save_artifacts() -> None:
     artifacts = os.environ.get("DYANA_SAVE", "").split(",")
@@ -114,10 +116,19 @@ def get_disk_usage() -> int:
 
 def get_peak_rss() -> int:
     """
-    Get the peak RSS memory usage of the current process.
+    Get the combined RSS memory usage of the current process and all its child processes.
     """
-    # https://stackoverflow.com/a/7669482
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+    loader_process = psutil.Process()
+    loader_rss = loader_process.memory_info().rss
+    children_rss = 0
+
+    for child in loader_process.children(recursive=True):
+        try:
+            children_rss += child.memory_info().rss
+        except psutil.NoSuchProcess:
+            continue
+
+    return loader_rss + children_rss
 
 
 def get_gpu_usage() -> list[dict[str, t.Any]]:

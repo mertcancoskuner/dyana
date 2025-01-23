@@ -69,11 +69,12 @@ if __name__ == "__main__":
         service = webdriver.ChromeService(executable_path=CHROMIUM_DRIVER_PATH)
         driver = webdriver.Chrome(options=chrome_options, service=service)
 
+        profiler.track_memory("after_init")
+
         # set shorter timeouts
         driver.set_page_load_timeout(15)
         driver.implicitly_wait(5)
 
-        profiler.track_memory("before_load")
         try:
             profiler.track("dns_start", time.time())
             driver.get(args.url)
