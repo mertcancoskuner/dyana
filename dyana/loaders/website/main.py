@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import shutil
 import time
 
 from selenium import webdriver
@@ -12,13 +11,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
+CHROMIUM_BROWSER_PATH = "/usr/bin/chromium-browser"
+CHROMIUM_DRIVER_PATH = "/usr/lib/chromium/chromedriver"
 
-def setup_chrome_options():
+
+def setup_chrome_options(performance_log: bool) -> webdriver.ChromeOptions:
     chrome_options = webdriver.ChromeOptions()
+
+    chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
+
     # disable Google services and non-critical features that can cause hangs
     chrome_options.add_argument("--disable-sync")
     chrome_options.add_argument("--disable-extensions")
@@ -26,7 +31,7 @@ def setup_chrome_options():
     chrome_options.add_argument("--disable-domain-reliability")
     chrome_options.add_argument("--disable-client-side-phishing-detection")
     chrome_options.add_argument("--disable-component-update")
-    chrome_options.binary_location = "/usr/bin/chromium-browser"
+    chrome_options.binary_location = CHROMIUM_BROWSER_PATH
 
     # force DNS lookups for each request
     chrome_options.add_argument("--dns-prefetch-disable")
@@ -34,8 +39,10 @@ def setup_chrome_options():
     chrome_options.add_argument("--disable-browser-side-navigation")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
-    # network logging prefs
-    chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL", "browser": "ALL", "network": "ALL"})
+    if performance_log:
+        # network logging prefs
+        chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL", "browser": "ALL", "network": "ALL"})
+
     return chrome_options
 
 
@@ -55,10 +62,11 @@ if __name__ == "__main__":
         args.url = f"https://{args.url}"
 
     profiler: Profiler = Profiler()
+    driver: webdriver.Chrome | None = None
 
     try:
-        chrome_options = setup_chrome_options()
-        service = webdriver.ChromeService(executable_path="/usr/lib/chromium/chromedriver")
+        chrome_options = setup_chrome_options(args.performance_log)
+        service = webdriver.ChromeService(executable_path=CHROMIUM_DRIVER_PATH)
         driver = webdriver.Chrome(options=chrome_options, service=service)
 
         # set shorter timeouts
@@ -103,10 +111,10 @@ if __name__ == "__main__":
         profiler.track_error("chrome", str(e))
     finally:
         try:
-            if "driver" in locals():
+            if driver:
                 driver.quit()
-        except:
+        except Exception as _:
             pass
 
-        # ensure we always output something
-        print(json.dumps(profiler.as_dict()))
+    # ensure we always output something
+    print(json.dumps(profiler.as_dict()))
