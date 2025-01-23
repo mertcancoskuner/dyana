@@ -24,7 +24,7 @@ def get_package_import_names(package_name: str) -> set[str]:
 
     site_packages = find_site_packages()
     if not site_packages:
-        return []
+        return set()
 
     # look for package name variations
     base_name = package_name.replace("-", "_")
