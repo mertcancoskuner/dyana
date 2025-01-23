@@ -86,7 +86,8 @@ if __name__ == "__main__":
         import_success = False
 
         # first attempt to import directly
-        for name in [package_name, normalized_name]:
+        for name in {package_name, normalized_name}:
+            # print(f"attempting import with norm name: {name}")
             try:
                 importlib.import_module(normalized_name)
                 import_success = True
@@ -98,6 +99,7 @@ if __name__ == "__main__":
         if not import_success:
             import_names = get_package_import_names(package_name)
             for name in sorted(import_names, key=len):
+                # print(f"attempting import with name: {name}")
                 try:
                     importlib.import_module(name)
                     import_success = True
