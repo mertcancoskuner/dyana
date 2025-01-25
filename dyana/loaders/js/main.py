@@ -23,5 +23,3 @@ if __name__ == "__main__":
             profiler.track("stderr", result.stderr)
         except Exception as e:
             profiler.track_error("js", str(e))
-
-    print(json.dumps(profiler.as_dict()))

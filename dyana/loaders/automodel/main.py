@@ -71,5 +71,3 @@ if __name__ == "__main__":
 
     except Exception as e:
         profiler.track_error("model", str(e))
-
-    print(json.dumps(profiler.as_dict()))

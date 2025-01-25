@@ -20,5 +20,3 @@ if __name__ == "__main__":
             profiler.track_memory("after_load")
         except Exception as e:
             profiler.track_error("pickle", str(e))
-
-    print(json.dumps(profiler.as_dict()))

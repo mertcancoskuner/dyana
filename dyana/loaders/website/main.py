@@ -116,6 +116,3 @@ if __name__ == "__main__":
                 driver.quit()
         except Exception as _:
             pass
-
-    # ensure we always output something
-    print(json.dumps(profiler.as_dict()))

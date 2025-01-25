@@ -1,4 +1,5 @@
 import atexit
+import json
 import os
 import shutil
 import sys
@@ -22,10 +23,15 @@ def save_artifacts() -> None:
                 pass
 
 
-atexit.register(save_artifacts)
-
-
 class Profiler:
+    instance: t.Optional["Profiler"] = None
+
+    @staticmethod
+    def flush() -> None:
+        if Profiler.instance:
+            # add a prefix to the output to make it easier to identify in the logs
+            print("<DYANA_PROFILE>" + json.dumps(Profiler.instance.as_dict()))
+
     def __init__(self, gpu: bool = False):
         self._errors: dict[str, str] = {}
         self._warnings: dict[str, str] = {}
@@ -36,6 +42,8 @@ class Profiler:
         self._imports_at_start = get_current_imports()
         self._additionals: dict[str, t.Any] = {}
         self._extra: dict[str, t.Any] = {}
+
+        Profiler.instance = self
 
     def track_memory(self, event: str) -> None:
         self._ram[event] = get_peak_rss()
@@ -195,3 +203,8 @@ def get_network_stats() -> dict[str, dict[str, int]]:
             stats[interface] = {"rx": int(values[0]), "tx": int(values[8])}
 
     return stats
+
+
+# register atexit handlers
+atexit.register(save_artifacts)
+atexit.register(Profiler.flush)

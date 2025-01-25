@@ -23,5 +23,3 @@ if __name__ == "__main__":
                 profiler.track("stderr", stderr_buffer.getvalue())
         except Exception as e:
             profiler.track_error("python", str(e))
-
-    print(json.dumps(profiler.as_dict()))

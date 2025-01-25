@@ -234,13 +234,12 @@ class Loader:
                     print(":popcorn: [bold]loader[/]: [red]timeout reached, killing container[/]")
                     return self._create_errored_run("timeout", "timeout reached, killing container")
 
+            # loaders could generate all sorts of output before flushing the JSON profile
+            # so we use a prefix to identify and separate them.
             extra_output: str | None = None
-            if not self.output.startswith("{"):
-                idx = self.output.find("{")
-                if idx > 0:
-                    extra_output = self.output[:idx]
-                    self.output = self.output[idx:]
-                    # print(f":popcorn: [bold]loader[/]: [dim]{extra_output}[/]")
+            idx = self.output.find("<DYANA_PROFILE>")
+            extra_output = self.output[:idx]
+            self.output = self.output[idx + len("<DYANA_PROFILE>") :]
 
             try:
                 run = Run.model_validate_json(self.output)

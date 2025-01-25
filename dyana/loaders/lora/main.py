@@ -22,5 +22,3 @@ if __name__ == "__main__":
         profiler.track_memory("after_adapter_loaded")
     except Exception as e:
         profiler.track_error("adapter", str(e))
-
-    print(json.dumps(profiler.as_dict()))
