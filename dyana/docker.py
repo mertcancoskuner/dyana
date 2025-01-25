@@ -162,7 +162,8 @@ def run_detached(
         ],
         cap_drop=["ALL"],
         tmpfs={"/tmp": "size=100m,noexec"},
-        pids_limit=100,
+        # https://www.ibm.com/docs/en/wmlce/1.6.2?topic=frameworks-getting-started-pytorch#d15286e680
+        pids_limit=16384,
         ulimits=[
             docker.types.Ulimit(name="nofile", soft=1024, hard=1024),
             docker.types.Ulimit(name="nproc", soft=100, hard=100),
