@@ -8,3 +8,7 @@ args:
     description: Path to the LoRA adapter to profile.
     required: true
     volume: true
+
+examples:
+  - description: "Load a LoRA adapter and run it with an example input:"
+    command: dyana trace --loader lora --adapter /path/to/adapter

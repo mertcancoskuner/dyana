@@ -8,3 +8,13 @@ args:
   - name: package
     description: NPM compatible package name or expression.
     required: true
+
+examples:
+  - description: "Load and profile a NodeJS package via NPM:"
+    command: dyana trace --loader npm --package express
+
+  - description: "You can install a specific version of a package:"
+    command: dyana trace --loader npm --package express@1.0.0
+
+  - description: "You can also pass extra dependencies to be installed:"
+    command: dyana trace --loader npm --package express --extra-dependencies "axios"

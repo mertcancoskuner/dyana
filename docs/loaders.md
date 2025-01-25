@@ -1,6 +1,6 @@
 Dyana offers a set of loaders for different file types, with each loader having its own set of arguments. By default, each loader runs in an isolated, offline container.
 
-To view the available loaders and their scriptions, run `dyana loaders`.
+To view the available loaders and their scriptions, run `dyana loaders`. To show the help menu for a specific loader, run `dyana help <loader>`.
 
 ### AutoModel
 
@@ -13,22 +13,67 @@ The AutoModel loader is responsible for:
 
 In essence, the AutoModel loader simplifies the process of handling different machine learning model formats by automatically recognizing the model type and loading it appropriately, all within a secure and isolated environment.
 
+**Optional Build Arguments:** `--extra-requirements`
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--model` | Path to the model to profile. | `None` | yes |
+| `--input` | Input for the model. | `This is an example sentence.` | no |
+| `--low-memory` | Perform tokenizer and model initialization without loading weights. | `None` | no |
+
+#### Examples
+
+Load a model and run it with an example input:
+
 ```bash
 dyana trace --loader automodel --model /path/to/model --input "This is an example sentence."
+```
 
-# Automodel is the default loader, so this is equivalent to:
+automodel is the default loader, so this is equivalent to:
+
+```bash
 dyana trace --model /path/to/model --input "This is an example sentence."
+```
 
+In case the model requires extra dependencies, you can pass them as:
 
-# In case the model requires extra dependencies, you can pass them as:
+```bash
 dyana trace --model tohoku-nlp/bert-base-japanese --input "This is an example sentence." --extra-requirements "protobuf fugashi ipadic"
+```
+
+To perform tokenizer and model initialization without loading weights:
+
+```bash
+dyana trace --model /path/to/model --low-memory
 ```
 
 ![AutoModel Loader](assets/loader-automodel.png)
 
+### LoRA
+
+Loads LoRA adapters via PEFT.
+
+**Optional Build Arguments:** `--extra-requirements`
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--adapter` | Path to the LoRA adapter to profile. | `None` | yes |
+
+#### Examples
+
+Load a LoRA adapter and run it with an example input:
+
+```bash
+dyana trace --loader lora --adapter /path/to/adapter
+```
+
 ### ELF
 
-An ELF loader specifically handles ELF (Executable and Linkable Format) files. ELF is a standard file format commonly used for executables, object code, shared libraries, and core dumps on Unix-like systems (including Linux).
+The ELF loader specifically handles ELF (Executable and Linkable Format) files. ELF is a standard file format commonly used for executables, object code, shared libraries, and core dumps on Unix-like systems (including Linux).
 
 The ELF loader is responsible for:
 
@@ -38,13 +83,29 @@ The ELF loader is responsible for:
 
 This loader allows you to safely run and analyze ELF executables without exposing the underlying system to potential risks, making it especially useful for security research, debugging, or testing ELF binaries in a secure environment.
 
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--elf` | Path to the executable file to run. | `None` | yes |
+
+#### Examples
+
+Load an ELF file:
+
 ```bash
 dyana trace --loader elf --elf /path/to/linux_executable
+```
 
-# Depending on the ELF file and the host computer, you may need to specify a different platform:
+Depending on the ELF file and the host computer, you might need to specify a different platform:
+
+```bash
 dyana trace --loader elf --elf /path/to/linux_executable --platform linux/amd64
+```
 
-# Networking is disabled by default. If you need to allow it, you can pass the --allow-network flag:
+Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+
+```bash
 dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 ```
 
@@ -52,7 +113,7 @@ dyana trace --loader elf --elf /path/to/linux_executable --allow-network
 
 ### pickle
 
-A Pickle loader is designed to handle Pickle serialized files. Pickle is a module specific to Python that's used to serialize (or "pickle") Python objects. Meaning, it converts Python objects into a byte stream that can be stored on disk and later deserialized (or "unpickled") back into the original Python objects.
+The Pickle loader is designed to handle Pickle serialized files. Pickle is a module specific to Python that's used to serialize (or "pickle") Python objects. Meaning, it converts Python objects into a byte stream that can be stored on disk and later deserialized (or "unpickled") back into the original Python objects.
 
 The Pickle loader is responsible for:
 
@@ -62,10 +123,23 @@ The Pickle loader is responsible for:
 
 Since Pickle files can sometimes contain malicious code, loading them into Dyana ensures that the deserialization process is safe and doesn't compromise the host system.
 
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--pickle` | Path to the python pickle file to deserialize. | `None` | yes |
+
+#### Examples
+
+Load a Pickle file:
+
 ```bash
 dyana trace --loader pickle --pickle /path/to/file.pickle
+```
 
-# Networking is disabled by default. If you need to allow it, you can pass the --allow-network flag:
+Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+
+```bash
 dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 ```
 
@@ -73,7 +147,7 @@ dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
 
 ### python
 
-A Python loader is specifically designed to handle and execute files related to Python. This includes Python scripts and other Python objects like modules or libraries.
+The Python loader is specifically designed to handle and execute files related to Python. This includes Python scripts and other Python objects like modules or libraries.
 
 The Python loader is responsible for:
 
@@ -84,18 +158,67 @@ The Python loader is responsible for:
 
 By using a Python loader, Dyana enables secure execution and analysis of Python scripts or applications, even if they are untrusted or potentially harmful, by containing them within a controlled environment.
 
+* **Requires Network:** no
+* **Optional Build Arguments:** `--extra-requirements`
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--script` | Path to the script to profile. | `None` | yes |
+
+#### Examples
+
+Load a Python script:
+
 ```bash
 dyana trace --loader python --script /path/to/file.py
+```
 
-# Networking is disabled by default. If you need to allow it, you can pass the --allow-network flag:
+Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+
+```bash
 dyana trace --loader python --script /path/to/file.py --allow-network
 ```
 
 ![Python Loader](assets/loader-python.png)
 
+### PIP
+
+Loads and profiles Python packages installation via PIP.
+
+* **Requires Network:** yes
+* **Optional Build Arguments:** `--extra-dependencies`
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--package` | PIP compatible package name or expression. | `None` | yes |
+
+#### Examples
+
+Load and profile a Python package via PIP:
+
+```bash
+dyana trace --loader pip --package requests
+```
+
+You can install a specific version of a package:
+
+```bash
+dyana trace --loader pip --package requests==2.28.2
+```
+
+You can also pass extra dependencies to be installed:
+
+```bash
+dyana trace --loader pip --package foobar --extra-dependencies "gcc"
+```
+
 ### JS
 
-A JS loader is designed to handle and execute JavaScript (JS) files in Dyana. JavaScript files are commonly used for web applications and scripts, but they can also pose security risks if they contain malicious code.
+The JS loader is designed to handle and execute JavaScript (JS) files in Dyana. JavaScript files are commonly used for web applications and scripts, but they can also pose security risks if they contain malicious code.
 
 The JS loader is responsible for:
 
@@ -106,10 +229,96 @@ The JS loader is responsible for:
 
 By using the JS loader, Dyana ensures that potentially dangerous JavaScript code is executed in a secure, isolated manner, making it safer to work with in research, testing, or debugging scenarios.
 
+* **Requires Network:** no
+* **Optional Build Arguments:** `--extra-requirements`
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--script` | Path to the script to profile. | `None` | yes |
+
+#### Examples
+
+Load and profile a JS script:
+
 ```bash
 dyana trace --loader js --script /path/to/file.js
+```
 
-# Networking is disabled by default. If you need to allow it, you can pass the --allow-network flag:
+Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:
+
+```bash
 dyana trace --loader js --script /path/to/file.js --allow-network
 ```
+
 ![JS Loader](assets/loader-js.png)
+
+### NPM
+
+Loads and profiles NodeJS packages installation via NPM.
+
+* **Requires Network:** yes
+* **Optional Build Arguments:** `--extra-dependencies`
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--package` | NPM compatible package name or expression. | `None` | yes |
+
+#### Examples
+
+Load and profile a NodeJS package via NPM:
+
+```bash
+dyana trace --loader npm --package express
+```
+
+You can install a specific version of a package:
+
+```bash
+dyana trace --loader npm --package express@1.0.0
+```
+
+You can also pass extra dependencies to be installed:
+
+```bash
+dyana trace --loader npm --package express --extra-dependencies "axios"
+```
+
+### Website
+
+Opens a website in a headless browser and profiles its performance.
+
+* **Requires Network:** yes
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--url` | URL to open. | `None` | yes |
+| `--screenshot` | Save a screenshot of the page. | `None` | no |
+| `--wait-for` | CSS selector to wait for before profiling. | `None` | no |
+| `--wait-for-timeout` | Timeout in seconds for page load and element wait. | `None` | no |
+| `--performance-log` | Enable advanced performance logging. | `None` | no |
+
+#### Examples
+
+Load and profile a website:
+
+```bash
+dyana trace --loader website --url https://www.google.com
+```
+
+You can also save a screenshot of the page:
+
+```bash
+dyana trace --loader website --url https://www.google.com --screenshot
+```
+
+You can also wait for a specific element to load:
+
+```bash
+dyana trace --loader website --url https://www.google.com --wait-for "body"
+```

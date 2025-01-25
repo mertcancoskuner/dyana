@@ -5,3 +5,13 @@ args:
     description: Path to the executable file to run.
     required: true
     volume: true
+
+examples:
+  - description: "Load an ELF file:"
+    command: dyana trace --loader elf --elf /path/to/linux_executable
+
+  - description: "Depending on the ELF file and the host computer, you might need to specify a different platform:"
+    command: dyana trace --loader elf --elf /path/to/linux_executable --platform linux/amd64
+
+  - description: "Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:"
+    command: dyana trace --loader elf --elf /path/to/linux_executable --allow-network

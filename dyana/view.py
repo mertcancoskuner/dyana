@@ -1,8 +1,83 @@
 import typing as t
 
-from rich import print
+from rich import box, print
+from rich.table import Table
 
+from dyana.loaders.loader import Loader
 from dyana.tracer.tracee import Tracer
+
+
+def _view_loader_help_markdown(loader: Loader) -> None:
+    print(f"# {loader.name}\n")
+    print(f"{loader.settings.description}")
+    print()
+    print("* **Requires Network:**", "yes" if loader.settings.network else "no")
+    if loader.settings.build_args:
+        print("* **Optional Build Arguments:**", ", ".join({f"`--{k}`" for k in loader.settings.build_args.keys()}))
+
+    if loader.settings.args:
+        print()
+        print("## Arguments")
+        print()
+
+        print(
+            "| Argument     | Description                                                         | Default                      | Required |"
+        )
+        print(
+            "|--------------|---------------------------------------------------------------------|------------------------------|----------|"
+        )
+        for arg in loader.settings.args:
+            print(f"| `--{arg.name}` | {arg.description} | `{arg.default}` | {'yes' if arg.required else 'no'} |")
+
+    if loader.settings.examples:
+        print()
+        print("## Examples")
+        print()
+        for example in loader.settings.examples:
+            print(f"{example.description}\n")
+            print(f"```bash\n{example.command}\n```")
+            print()
+
+
+def view_loader_help(loader: Loader, markdown: bool) -> None:
+    if loader.settings:
+        if markdown:
+            _view_loader_help_markdown(loader)
+        else:
+            print(f"[bold green]{loader.name}[/] - {loader.settings.description}\n")
+            if loader.settings.network:
+                print("Network    : [bold red]yes[/]")
+            else:
+                print("Network    : [dim]no[/]")
+
+            if loader.settings.build_args:
+                print("Build args :", ", ".join({f"[yellow]--{k}[/]" for k in loader.settings.build_args.keys()}))
+
+            if loader.settings.args:
+                print("")
+                table = Table(box=box.ROUNDED)
+                table.add_column("Argument", style="yellow")
+                table.add_column("Description")
+                table.add_column("Default")
+                table.add_column("Required")
+
+                for arg in loader.settings.args:
+                    table.add_row(
+                        f"--{arg.name}",
+                        arg.description,
+                        f"[dim]{arg.default}[/]" if arg.default else "",
+                        str(arg.required),
+                    )
+                print(table)
+
+            if loader.settings.examples:
+                print()
+                print("[bold]Examples[/]")
+                print()
+                for example in loader.settings.examples:
+                    print(f"{example.description}\n")
+                    print(f"  [dim]{example.command}[/]")
+                    print()
 
 
 # https://stackoverflow.com/questions/1094841/get-a-human-readable-version-of-a-file-size

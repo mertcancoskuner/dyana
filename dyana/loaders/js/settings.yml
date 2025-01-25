@@ -8,3 +8,10 @@ args:
     description: Path to the script to profile.
     required: true
     volume: true
+
+examples:
+  - description: "Load and profile a JS script:"
+    command: dyana trace --loader js --script /path/to/file.js
+
+  - description: "Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:"
+    command: dyana trace --loader js --script /path/to/file.js --allow-network

@@ -23,3 +23,13 @@ args:
   - name: performance-log
     description: Enable advanced performance logging.
     required: false
+
+examples:
+  - description: "Load and profile a website:"
+    command: dyana trace --loader website --url https://www.google.com
+
+  - description: "You can also save a screenshot of the page:"
+    command: dyana trace --loader website --url https://www.google.com --screenshot
+
+  - description: "You can also wait for a specific element to load:"
+    command: dyana trace --loader website --url https://www.google.com --wait-for "body"
