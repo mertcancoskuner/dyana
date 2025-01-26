@@ -49,6 +49,13 @@ To perform tokenizer and model initialization without loading weights:
 dyana trace --model /path/to/model --low-memory
 ```
 
+To increase the execution timeout of the trace in seconds. [default: 60]
+> This is a common fix for errors related to `* timeout: timeout reached, killing container` for larger models.
+
+```bash
+dyana trace --model /path/to/model --timeout 120
+```
+
 ![AutoModel Loader](assets/loader-automodel.png)
 
 ### LoRA
