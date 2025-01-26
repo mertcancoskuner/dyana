@@ -207,11 +207,11 @@ class Loader:
                 print(f":popcorn: [bold]loader[/]: saving artifacts to [dim]{self.save_to}[/]")
 
             if self.settings and self.settings.volumes:
-                for volume in self.settings.volumes:
-                    host = os.path.expanduser(volume.host)
+                for vol in self.settings.volumes:
+                    host = os.path.expanduser(vol.host)
                     if os.path.exists(host):
-                        volumes[host] = volume.guest
-                        print(f":popcorn: [bold]loader[/]: mounting volume [dim]{host}[/] to [dim]{volume.guest}[/]")
+                        volumes[host] = vol.guest
+                        print(f":popcorn: [bold]loader[/]: mounting volume [dim]{host}[/] to [dim]{vol.guest}[/]")
 
             self.container = docker.run_detached(
                 self.image,
