@@ -20,7 +20,6 @@ if __name__ == "__main__":
 
     path: str = os.path.abspath(args.model)
     inputs: t.Any | None = None
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     profiler: Profiler = Profiler(gpu=True)
     has_tokenizer: bool = os.path.exists(os.path.join(path, "tokenizer.json"))
 
@@ -39,7 +38,7 @@ if __name__ == "__main__":
                 tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
                 profiler.track_memory("after_tokenizer_loaded")
 
-                inputs = tokenizer(args.input, return_tensors="pt").to(device)
+                inputs = tokenizer(args.input, return_tensors="pt")
                 profiler.track_memory("after_tokenization")
 
         except Exception as e:
@@ -54,7 +53,7 @@ if __name__ == "__main__":
                 profiler.track_memory("after_model_initialized")
         else:
             # load model weights and perform inference
-            model = AutoModel.from_pretrained(path, trust_remote_code=True).to(device)
+            model = AutoModel.from_pretrained(path, trust_remote_code=True, device_map="auto")
             profiler.track_memory("after_model_loaded")
 
             if has_tokenizer:
