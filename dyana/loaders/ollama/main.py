@@ -13,9 +13,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # start ollama server
-    os.system("ollama serve &")
-    for i in range(10):
-        print(f"waiting for ollama to start... {i}")
+    os.system("ollama serve > /dev/null 2>&1 &")
+    for _ in range(30):
+        # print(f"waiting for ollama to start... {i}")
         if os.system("ollama ls > /dev/null 2>&1") == 0:
             break
         time.sleep(1)
