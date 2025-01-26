@@ -1,7 +1,8 @@
 import argparse
 import os
-import subprocess
 import time
+
+from ollama import Client
 
 from dyana import Profiler  # type: ignore[attr-defined]
 
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # start ollama server
-    os.system("ollama serve > /dev/null 2>&1 &")
+    os.system("ollama serve &")
     for i in range(10):
         print(f"waiting for ollama to start... {i}")
         if os.system("ollama ls > /dev/null 2>&1") == 0:
@@ -23,11 +24,22 @@ if __name__ == "__main__":
     profiler: Profiler = Profiler()
 
     try:
-        result = subprocess.run(["ollama", "run", args.model, args.input], capture_output=True, text=True)
+        client = Client(
+            host="http://127.0.0.1:11434",
+        )
+        response = client.chat(
+            model=args.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": args.input,
+                },
+            ],
+        )
 
-        profiler.track_memory("after_run")
-        profiler.track("exit_code", result.returncode)
-        profiler.track("stdout", result.stdout)
-        profiler.track("stderr", result.stderr)
+        profiler.track_memory("after_inference")
+
+        print(response)
+
     except Exception as e:
         profiler.track_error("ollama", str(e))

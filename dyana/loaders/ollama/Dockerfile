@@ -7,6 +7,9 @@ COPY dyana.py .
 COPY dyana-requirements.txt .
 RUN pip install --no-cache-dir -r dyana-requirements.txt
 
+COPY requirements.txt .
 COPY main.py .
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT ["python3", "-W", "ignore", "main.py"]
