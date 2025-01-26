@@ -39,7 +39,7 @@ Dyana is a sandbox environment using Docker and [Tracee](https://github.com/aqua
 
 * Python 3.10+ with PIP.
 * Docker
-* Optional: a GNU/Linux machine with CUDA for GPU memory tracing support.
+* Optional: a GNU/Linux machine with CUDA and the [nvidia-ctk runtime](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) for GPU memory profiling support.
 
 ## Installation
 
