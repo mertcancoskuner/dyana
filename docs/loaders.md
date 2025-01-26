@@ -58,6 +58,27 @@ dyana trace --model /path/to/model --timeout 120
 
 ![AutoModel Loader](assets/loader-automodel.png)
 
+### ollama
+
+Loads and profiles models via an Ollama server. Local models on the host machine are mounted and shared with the container.
+
+* **Requires Network:** no
+
+#### Arguments
+
+| Argument     | Description                                                         | Default                      | Required |
+|--------------|---------------------------------------------------------------------|------------------------------|----------|
+| `--model` | Name of the Ollama model to profile. | `None` | yes |
+| `--input` | Input for the model. | `This is an example sentence.` | no |
+
+#### Examples
+
+Pull a model on your host machine and profile it:
+
+```bash
+ollama pull deepseek-r1:1.5b && dyana trace --loader ollama --model deepseek-r1:1.5b
+```
+
 ### LoRA
 
 Loads LoRA adapters via PEFT.

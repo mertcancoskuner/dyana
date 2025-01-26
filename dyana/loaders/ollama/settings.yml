@@ -1,4 +1,4 @@
-description: Loads and profiles Ollama models.
+description: Loads and profiles models via an Ollama server. Local models on the host machine are mounted and shared with the container.
 
 volumes:
   # on macOS
@@ -17,3 +17,7 @@ args:
     description: Input for the model.
     default: This is an example sentence.
     required: false
+
+examples:
+  - description: "Pull a model on your host machine and profile it:"
+    command: ollama pull deepseek-r1:1.5b && dyana trace --loader ollama --model deepseek-r1:1.5b
