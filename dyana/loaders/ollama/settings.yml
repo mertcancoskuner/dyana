@@ -1,0 +1,19 @@
+description: Loads and profiles Ollama models.
+
+volumes:
+  # on macOS
+  - host: ~/.ollama/models
+    guest: /root/.ollama/models
+  # on Linux
+  - host: /usr/share/ollama/.ollama/models
+    guest: /root/.ollama/models
+
+args:
+  - name: model
+    description: Name of the Ollama model to profile.
+    required: true
+
+  - name: input
+    description: Input for the model.
+    default: This is an example sentence.
+    required: false

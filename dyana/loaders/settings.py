@@ -22,11 +22,17 @@ class Example(BaseModel):
     command: str
 
 
+class Volume(BaseModel):
+    host: str
+    guest: str
+
+
 class LoaderSettings(BaseModel):
     description: str
     build_args: dict[str, str] | None = None
     args: list[LoaderArgument] | None = None
     network: bool | None = False
+    volumes: list[Volume] | None = None
     examples: list[Example] | None = None
 
     def _parse_arg_name_from(self, name: str, args: list[str]) -> str | None:
