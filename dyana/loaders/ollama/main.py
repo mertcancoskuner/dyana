@@ -21,7 +21,7 @@ if __name__ == "__main__":
         time.sleep(1)
 
     # create profiler after the server is started
-    profiler: Profiler = Profiler()
+    profiler: Profiler = Profiler(gpu=True)
 
     try:
         client = Client(
