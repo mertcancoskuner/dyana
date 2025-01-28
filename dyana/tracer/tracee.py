@@ -10,6 +10,7 @@ import docker as docker_pkg
 from pydantic import BaseModel
 from rich import print
 
+import dyana
 import dyana.docker as docker
 from dyana.loaders.loader import Loader, Run
 
@@ -18,6 +19,9 @@ class Trace(BaseModel):
     started_at: datetime
     ended_at: datetime
     platform: str
+    tracee_version: str | None = None
+    tracee_kernel_release: str | None = None
+    dyana_version: str | None = None
     run: Run
     events: list[t.Any] = []
 
@@ -110,6 +114,8 @@ class Tracer:
         self.reader_error: str | None = None
         self.reader_thread: threading.Thread | None = None
         self.container: docker_pkg.models.containers.Container | None = None
+        self.tracee_kernel_release: str | None = None
+        self.tracee_version: str | None = None
         self.ready = False
 
     def _reader_thread(self) -> None:
@@ -159,6 +165,8 @@ class Tracer:
                 # these are debug messages, do not collect them
                 if "is ready callback" in line:
                     self.ready = True
+                elif "KERNEL_RELEASE" in message:
+                    self.tracee_kernel_release = message["KERNEL_RELEASE"]
             else:
                 # other messages
                 # print(f":eye_in_speech_bubble:  [bold]tracer[/]: {message['M'].strip()}")
@@ -198,6 +206,7 @@ class Tracer:
             entrypoint="/tracee/tracee",
             environment={"LIBBPFGO_OSRELEASE_FILE": "/etc/os-release-host"},
         )
+        self.tracee_version = self.container.image.attrs["RepoDigests"][0]
 
         # start reading tracee output in a separate thread
         self.reader_error = None
@@ -238,6 +247,9 @@ class Tracer:
             platform=platform.platform(),
             started_at=started_at,
             ended_at=ended_at,
+            dyana_version=dyana.__version__,
+            tracee_version=self.tracee_version,
+            tracee_kernel_release=self.tracee_kernel_release,
             # filter out any events from containers different than the one we created
             events=[
                 event
