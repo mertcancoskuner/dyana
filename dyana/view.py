@@ -137,7 +137,7 @@ def view_header(trace: dict[str, t.Any]) -> None:
                 print(f"  * [b]{group}[/]: {error}")
         print()
 
-    if run["warnings"]:
+    if "warnings" in run and run["warnings"]:
         print()
         print("[bold yellow]Warnings:[/bold yellow]\n")
         for group, warning in run["warnings"].items():
