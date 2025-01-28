@@ -13,19 +13,8 @@ from rich import print
 
 import dyana.docker as docker
 import dyana.loaders as loaders
+from dyana.loaders.base.dyana import Stage
 from dyana.loaders.settings import LoaderSettings, ParsedArgument
-
-
-class GpuDeviceUsage(BaseModel):
-    device_index: int
-    device_name: str
-    total_memory: int
-    free_memory: int
-
-
-class NetworkDeviceUsage(BaseModel):
-    rx: int
-    tx: int
 
 
 class Run(BaseModel):
@@ -36,13 +25,13 @@ class Run(BaseModel):
     volumes: dict[str, str] | None = None
     errors: dict[str, str] | None = None
     warnings: dict[str, str] | None = None
-    ram: dict[str, int] | None = None
-    gpu: dict[str, list[GpuDeviceUsage]] | None = None
-    disk: dict[str, int] | None = None
-    network: dict[str, dict[str, NetworkDeviceUsage]] | None = None
+    # process output and exit code
     stdout: str | None = None
     stderr: str | None = None
     exit_code: int | None = None
+    # profiling stages
+    stages: list[Stage] | None = None
+    # extra data
     extra: dict[str, t.Any] | None = None
 
 
@@ -64,8 +53,13 @@ class Loader:
 
         self.image_name = name
         self.timeout = timeout
-        self.base_lib_path = os.path.join(loaders.__path__[0], "base/dyana.py")
-        self.base_requirements_path = os.path.join(loaders.__path__[0], "base/dyana-requirements.txt")
+
+        self.base_paths_to_copy = [
+            os.path.join(loaders.__path__[0], "base/dyana.py"),
+            os.path.join(loaders.__path__[0], "base/dyana-requirements.txt"),
+            os.path.join(loaders.__path__[0], "base/dyana-requirements-gpu.txt"),
+        ]
+
         self.path = os.path.join(loaders.__path__[0], name)
         self.reader_thread: threading.Thread | None = None
         self.container: docker_pkg.models.containers.Container | None = None
@@ -109,8 +103,8 @@ class Loader:
             # copy the base dyana.py to the loader directory
             # TODO: ideally the file name should be randomized in order to avoid low-hanging fruits in terms
             # of sandbox detection techniques
-            shutil.copy(self.base_lib_path, os.path.join(self.path, "dyana.py"))
-            shutil.copy(self.base_requirements_path, os.path.join(self.path, "dyana-requirements.txt"))
+            for path in self.base_paths_to_copy:
+                shutil.copy(path, os.path.join(self.path, os.path.basename(path)))
 
             self.image = docker.build(
                 self.path, self.image_name, platform=self.platform, build_args=self.build_args, verbose=verbose

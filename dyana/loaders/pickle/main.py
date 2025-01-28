@@ -16,6 +16,6 @@ if __name__ == "__main__":
         try:
             with open(args.pickle, "rb") as f:
                 ret = pickle.load(f)
-            profiler.track_memory("after_load")
+            profiler.on_stage("after_load")
         except Exception as e:
             profiler.track_error("pickle", str(e))

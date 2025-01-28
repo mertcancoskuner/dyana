@@ -1,6 +1,5 @@
 import argparse
 import os
-import time
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -68,16 +67,14 @@ if __name__ == "__main__":
         service = webdriver.ChromeService(executable_path=CHROMIUM_DRIVER_PATH)
         driver = webdriver.Chrome(options=chrome_options, service=service)
 
-        profiler.track_memory("after_init")
+        profiler.on_stage("after_init")
 
         # set shorter timeouts
         driver.set_page_load_timeout(15)
         driver.implicitly_wait(5)
 
         try:
-            profiler.track("dns_start", time.time())
             driver.get(args.url)
-            profiler.track("dns_end", time.time())
         except TimeoutException:
             profiler.track_error("page_load", f"Timeout loading page: {args.url}")
             # continue execution to capture any partial data
@@ -88,7 +85,7 @@ if __name__ == "__main__":
             browser_logs = driver.get_log("browser")
             profiler.track_extra("browser_logs", browser_logs)
 
-        profiler.track_memory("after_load")
+        profiler.on_stage("after_load")
 
         if args.wait_for:
             try:
@@ -105,7 +102,7 @@ if __name__ == "__main__":
             except Exception as e:
                 profiler.track_error("screenshot", str(e))
 
-        profiler.track_memory("after_profiling")
+        profiler.on_stage("after_profiling")
 
     except Exception as e:
         profiler.track_error("chrome", str(e))

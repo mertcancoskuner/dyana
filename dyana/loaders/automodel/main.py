@@ -33,13 +33,13 @@ if __name__ == "__main__":
                 # a meta torch device
                 with init_empty_weights(include_buffers=True):
                     tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-                    profiler.track_memory("after_tokenizer_initialized")
+                    profiler.on_stage("after_tokenizer_initialized")
             else:
                 tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-                profiler.track_memory("after_tokenizer_loaded")
+                profiler.on_stage("after_tokenizer_loaded")
 
                 inputs = tokenizer(args.input, return_tensors="pt")
-                profiler.track_memory("after_tokenization")
+                profiler.on_stage("after_tokenization")
 
         except Exception as e:
             profiler.track_error("tokenizer", str(e))
@@ -50,11 +50,11 @@ if __name__ == "__main__":
             # a meta torch device
             with init_empty_weights(include_buffers=True):
                 model = AutoModel.from_config(config, trust_remote_code=True)
-                profiler.track_memory("after_model_initialized")
+                profiler.on_stage("after_model_initialized")
         else:
             # load model weights and perform inference
             model = AutoModel.from_pretrained(path, trust_remote_code=True, device_map="auto")
-            profiler.track_memory("after_model_loaded")
+            profiler.on_stage("after_model_loaded")
 
             if has_tokenizer:
                 if inputs is None:
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 # no need to compute gradients
                 with torch.no_grad():
                     outputs = model(**inputs)
-                    profiler.track_memory("after_model_inference")
+                    profiler.on_stage("after_model_inference")
             else:
                 profiler.track_warning("model", "tokenizer not found, inference skipped")
 

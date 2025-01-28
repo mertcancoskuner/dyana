@@ -17,7 +17,7 @@ if __name__ == "__main__":
             with capture_output() as (stdout_buffer, stderr_buffer):
                 runpy.run_path(args.script)
 
-                profiler.track_memory("after_execution")
+                profiler.on_stage("after_execution")
                 profiler.track("stdout", stdout_buffer.getvalue())
                 profiler.track("stderr", stderr_buffer.getvalue())
         except Exception as e:

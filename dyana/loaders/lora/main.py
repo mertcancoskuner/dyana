@@ -18,6 +18,6 @@ if __name__ == "__main__":
 
     try:
         load_peft_weights(path)
-        profiler.track_memory("after_adapter_loaded")
+        profiler.on_stage("after_adapter_loaded")
     except Exception as e:
         profiler.track_error("adapter", str(e))

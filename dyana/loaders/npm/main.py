@@ -12,8 +12,7 @@ if __name__ == "__main__":
 
     try:
         subprocess.check_call(["npm", "install", args.package])
-        profiler.track_memory("after_installation")
-        profiler.track_disk("after_installation")
+        profiler.on_stage("after_installation")
 
         # explicitly require the package to make sure it's loaded
         package_name = args.package
@@ -21,6 +20,8 @@ if __name__ == "__main__":
             package_name = package_name[1:]
         package_name = re.split("[^a-zA-Z0-9_-]", package_name)[0]
         result = subprocess.run(["node", "-e", f"require('{package_name}')"], capture_output=True, text=True)
+
+        profiler.on_stage("after_require")
 
         profiler.track("exit_code", result.returncode)
         profiler.track("stdout", result.stdout)

@@ -37,7 +37,7 @@ if __name__ == "__main__":
             ],
         )
 
-        profiler.track_memory("after_inference")
+        profiler.on_stage("after_inference")
 
         print(response)
 

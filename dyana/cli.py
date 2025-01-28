@@ -13,15 +13,22 @@ from dyana.tracer.tracee import Tracer
 from dyana.view import (
     view_disk_events,
     view_disk_usage,
-    view_extra,
     view_gpus,
     view_header,
+    view_imports,
     view_loader_help,
     view_network_events,
     view_network_usage,
     view_process_executions,
     view_ram,
     view_security_events,
+)
+from dyana.view_legacy import (
+    view_legacy_disk_usage,
+    view_legacy_extra,
+    view_legacy_gpus,
+    view_legacy_network_usage,
+    view_legacy_ram,
 )
 
 cli = typer.Typer(
@@ -124,14 +131,31 @@ def summary(trace_path: pathlib.Path = typer.Option(help="Path to the trace file
         parser = cysimdjson.JSONParser()
         trace = parser.loads(raw)
 
-    view_header(trace)
-    view_ram(trace["run"])
-    view_gpus(trace["run"])
-    view_disk_usage(trace["run"])
+    is_legacy: bool = "stages" not in trace["run"]
+
+    view_header(trace, is_legacy)
+
+    if is_legacy:
+        view_legacy_ram(trace["run"])
+        view_legacy_gpus(trace["run"])
+        view_legacy_disk_usage(trace["run"])
+    else:
+        view_ram(trace["run"]["stages"])
+        view_gpus(trace["run"]["stages"])
+        view_disk_usage(trace["run"]["stages"])
 
     view_process_executions(trace)
-    view_network_usage(trace["run"])
+
+    if is_legacy:
+        view_legacy_network_usage(trace["run"])
+    else:
+        view_network_usage(trace["run"]["stages"])
+
     view_network_events(trace)
     view_disk_events(trace)
     view_security_events(trace)
-    view_extra(trace["run"])
+
+    if is_legacy:
+        view_legacy_extra(trace["run"])
+    else:
+        view_imports(trace["run"]["stages"])

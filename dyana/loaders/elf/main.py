@@ -16,7 +16,7 @@ if __name__ == "__main__":
         try:
             ret = subprocess.run([args.elf], capture_output=True, text=True, errors="replace")
 
-            profiler.track_memory("after_execution")
+            profiler.on_stage("after_execution")
 
             profiler.track("stdout", ret.stdout)
             profiler.track("stderr", ret.stderr)

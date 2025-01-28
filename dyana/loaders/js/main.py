@@ -16,7 +16,8 @@ if __name__ == "__main__":
         try:
             result = subprocess.run(["node", args.script], capture_output=True, text=True)
 
-            profiler.track_memory("after_execution")
+            profiler.on_stage("after_execution")
+
             profiler.track("exit_code", result.returncode)
             profiler.track("stdout", result.stdout)
             profiler.track("stderr", result.stderr)

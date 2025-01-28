@@ -3,24 +3,64 @@ import json
 import os
 import shutil
 import sys
+import time
 import typing as t
 from contextlib import contextmanager
 from io import StringIO
 
-import psutil
+from pydantic import BaseModel
 
 
-def save_artifacts() -> None:
-    artifacts = os.environ.get("DYANA_SAVE", "").split(",")
-    if artifacts:
-        for artifact in artifacts:
-            try:
-                if os.path.isdir(artifact):
-                    shutil.copytree(artifact, f"/artifacts/{artifact}")
-                elif os.path.isfile(artifact):
-                    shutil.copy(artifact, "/artifacts")
-            except Exception:
-                pass
+class GpuDeviceUsage(BaseModel):
+    device_index: int
+    device_name: str
+    total_memory: int
+    free_memory: int
+
+
+class NetworkDeviceUsage(BaseModel):
+    rx: int
+    tx: int
+
+
+class Stage(BaseModel):
+    # stage name
+    name: str
+    # stage timestamp
+    timestamp: int
+    # current memory usage
+    ram: int
+    # GPU memory usage if GPU is available
+    gpu: list[GpuDeviceUsage] | None = None
+    # disk usage
+    disk: int
+    # network usage for each interface
+    network: dict[str, NetworkDeviceUsage]
+    # newly imported modules
+    imports: dict[str, str | None]
+
+    @staticmethod
+    def create(name: str, prev_imports: dict[str, str | None] | None = None, with_gpu: bool = False) -> "Stage":
+        timestamp = time.time_ns()
+        ram = get_peak_rss()
+        gpu = get_gpu_usage() if with_gpu else None
+        disk = get_disk_usage()
+        network = get_network_stats()
+        current_imports = get_current_imports()
+        if prev_imports is None:
+            imports = current_imports
+        else:
+            imports = {k: current_imports[k] for k in current_imports if k not in prev_imports}
+
+        return Stage(
+            name=name,
+            timestamp=timestamp,
+            ram=ram,
+            gpu=gpu,
+            disk=disk,
+            network=network,
+            imports=imports,
+        )
 
 
 class Profiler:
@@ -33,28 +73,23 @@ class Profiler:
             print("<DYANA_PROFILE>" + json.dumps(Profiler.instance.as_dict()))
 
     def __init__(self, gpu: bool = False):
+        self._gpu = gpu
         self._errors: dict[str, str] = {}
         self._warnings: dict[str, str] = {}
-        self._disk: dict[str, int] = {"start": get_disk_usage()}
-        self._ram: dict[str, int] = {"start": get_peak_rss()}
-        self._gpu: dict[str, list[dict[str, t.Any]]] = {"start": get_gpu_usage()} if gpu else {}
-        self._network: dict[str, dict[str, dict[str, int]]] = {"start": get_network_stats()}
-        self._imports_at_start = get_current_imports()
+        self._stages: list[Stage] = [Stage.create("start", with_gpu=gpu)]
         self._additionals: dict[str, t.Any] = {}
         self._extra: dict[str, t.Any] = {}
 
         Profiler.instance = self
 
-    def track_memory(self, event: str) -> None:
-        self._ram[event] = get_peak_rss()
-        if self._gpu:
-            self._gpu[event] = get_gpu_usage()
+    def on_stage(self, name: str) -> None:
+        # collect all imports from previous stages in order to only track newly imported modules
+        prev_imports = {}
+        for stage in self._stages:
+            for k, v in stage.imports.items():
+                prev_imports[k] = v
 
-    def track_disk(self, event: str) -> None:
-        self._disk[event] = get_disk_usage()
-
-    def track_network(self, event: str) -> None:
-        self._network[event] = get_network_stats()
+        self._stages.append(Stage.create(name, prev_imports=prev_imports, with_gpu=self._gpu))
 
     def track_error(self, event: str, error: str) -> None:
         self._errors[event] = error
@@ -69,23 +104,14 @@ class Profiler:
         self._extra[key] = value
 
     def as_dict(self) -> dict[str, t.Any]:
-        imports_at_end = get_current_imports()
-        imported = {k: imports_at_end[k] for k in imports_at_end if k not in self._imports_at_start}
-
-        if len(self._network.keys()) == 1:
-            self.track_network("end")
+        self.on_stage("end")
 
         as_dict: dict[str, t.Any] = {
-            "ram": self._ram,
-            "disk": self._disk,
-            "network": self._network,
+            "stages": [stage.model_dump() for stage in self._stages],
             "errors": self._errors,
             "warnings": self._warnings,
-            "extra": {"imports": imported, **self._extra},
+            "extra": self._extra,
         } | self._additionals
-
-        if self._gpu:
-            as_dict["gpu"] = self._gpu
 
         return as_dict
 
@@ -125,6 +151,8 @@ def get_peak_rss() -> int:
     """
     Get the combined RSS memory usage of the current process and all its child processes.
     """
+    import psutil
+
     loader_process: psutil.Process = psutil.Process()
     loader_rss: int = loader_process.memory_info().rss
     children_rss: int = 0
@@ -138,13 +166,13 @@ def get_peak_rss() -> int:
     return loader_rss + children_rss
 
 
-def get_gpu_usage() -> list[dict[str, t.Any]]:
+def get_gpu_usage() -> list[GpuDeviceUsage]:
     """
     Get the GPU usage, for each GPU, of the current process.
     """
     import torch
 
-    usage: list[dict[str, t.Any]] = []
+    usage: list[GpuDeviceUsage] = []
 
     if torch.cuda.is_available():
         # for each GPU
@@ -154,12 +182,12 @@ def get_gpu_usage() -> list[dict[str, t.Any]]:
             (free, total) = mem
 
             usage.append(
-                {
-                    "device_index": i,
-                    "device_name": dev.name,
-                    "total_memory": total,
-                    "free_memory": free,
-                }
+                GpuDeviceUsage(
+                    device_index=i,
+                    device_name=dev.name,
+                    total_memory=total,
+                    free_memory=free,
+                )
             )
 
     return usage
@@ -179,13 +207,13 @@ def get_current_imports() -> dict[str, str | None]:
     return imports
 
 
-def get_network_stats() -> dict[str, dict[str, int]]:
+def get_network_stats() -> dict[str, NetworkDeviceUsage]:
     """
     Parse /proc/net/dev and return a dictionary of network interface statistics.
     Returns a dictionary where each key is an interface name and each value is
     a dictionary containing bytes_received and bytes_sent.
     """
-    stats: dict[str, dict[str, int]] = {}
+    stats: dict[str, NetworkDeviceUsage] = {}
 
     with open("/proc/net/dev") as f:
         # skip the first two header lines
@@ -200,9 +228,22 @@ def get_network_stats() -> dict[str, dict[str, int]]:
 
             interface = parts[0].strip()
             values = parts[1].split()
-            stats[interface] = {"rx": int(values[0]), "tx": int(values[8])}
+            stats[interface] = NetworkDeviceUsage(rx=int(values[0]), tx=int(values[8]))
 
     return stats
+
+
+def save_artifacts() -> None:
+    artifacts = os.environ.get("DYANA_SAVE", "").split(",")
+    if artifacts:
+        for artifact in artifacts:
+            try:
+                if os.path.isdir(artifact):
+                    shutil.copytree(artifact, f"/artifacts/{artifact}")
+                elif os.path.isfile(artifact):
+                    shutil.copy(artifact, "/artifacts")
+            except Exception:
+                pass
 
 
 # register atexit handlers

@@ -76,8 +76,7 @@ if __name__ == "__main__":
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "--no-cache-dir", "--root-user-action=ignore", args.package]
         )
-        profiler.track_memory("after_installation")
-        profiler.track_disk("after_installation")
+        profiler.on_stage("after_installation")
 
         # get base package name (remove version, etc)
         package_name = re.split("[^a-zA-Z0-9_-]", args.package)[0]
@@ -110,8 +109,7 @@ if __name__ == "__main__":
         if not import_success:
             profiler.track_warning("pip", "could not find import name for package")
         else:
-            profiler.track_memory("after_import")
-            profiler.track_disk("after_import")
+            profiler.on_stage("after_import")
 
     except Exception as e:
         profiler.track_error("pip", str(e))

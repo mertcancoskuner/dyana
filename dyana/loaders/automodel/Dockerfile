@@ -4,8 +4,8 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y build-essential
 COPY dyana.py .
-COPY dyana-requirements.txt .
-RUN pip install --no-cache-dir --root-user-action=ignore -r dyana-requirements.txt
+COPY dyana-requirements-gpu.txt .
+RUN pip install --no-cache-dir --root-user-action=ignore -r dyana-requirements-gpu.txt
 
 COPY requirements.txt .
 COPY main.py .
