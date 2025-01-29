@@ -72,6 +72,7 @@ def help(
 
     except Exception as e:
         print(f":cross_mark: [red]{e}[/]")
+        exit(1)
 
 
 @cli.command(
@@ -121,6 +122,8 @@ def trace(
         print(f":cross_mark: [bold][red]error:[/] [red]{e}[/]")
         if verbose:
             raise
+        else:
+            exit(1)
 
 
 @cli.command(help="Show a summary of the trace.")
