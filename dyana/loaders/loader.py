@@ -60,13 +60,21 @@ class Loader:
             os.path.join(loaders.__path__[0], "base/dyana-requirements-gpu.txt"),
         ]
 
+        # check in the loaders package first
         self.path = os.path.join(loaders.__path__[0], name)
+        if not os.path.exists(self.path):
+            # if an external loader has been specified
+            if os.path.exists(name):
+                self.path = name
+
+        self.settings_path = os.path.join(self.path, "settings.yml")
+        self.dockerfile = os.path.join(self.path, "Dockerfile")
+
         self.reader_thread: threading.Thread | None = None
         self.container: docker_pkg.models.containers.Container | None = None
         self.container_id: str | None = None
         self.output: str = ""
         self.platform = platform
-        self.settings_path = os.path.join(self.path, "settings.yml")
         self.settings: LoaderSettings | None = None
         self.build_args: dict[str, str] | None = None
         self.args: list[ParsedArgument] | None = None
@@ -84,8 +92,7 @@ class Loader:
         else:
             self.settings = None
 
-        self.dockerfile = os.path.join(self.path, "Dockerfile")
-        if not os.path.exists(self.dockerfile):
+        if not os.path.exists(self.path):
             raise ValueError(f"Loader {name} does not exist, use [bold]dyana loaders[/] to see the available loaders")
         elif not os.path.isfile(self.dockerfile):
             raise ValueError(f"Loader {name} does not contain a Dockerfile")
