@@ -1,0 +1,29 @@
+description: Loads and profiles Megatron-LM DMC models for efficient inference
+
+build_args:
+  extra-requirements: EXTRA_REQUIREMENTS
+
+args:
+  - name: model
+    description: Path to Megatron model checkpoint
+    required: true
+    volume: true
+
+  - name: tokenizer
+    description: Path to Llama 2 tokenizer model
+    required: true
+    volume: true
+
+  - name: size
+    description: Model size (7B or 13B)
+    required: true
+    choices: ["7B", "13B"]
+
+  - name: input
+    description: Input text for inference
+    default: "This is an example prompt."
+    required: false
+
+examples:
+  - description: "Load a Megatron-DMC model with tokenizer:"
+    command: dyana trace --loader megatron --model /path/to/model --tokenizer /path/to/tokenizer.model --size 7B
