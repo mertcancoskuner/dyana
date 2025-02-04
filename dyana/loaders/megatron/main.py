@@ -1,7 +1,11 @@
 import argparse
 import os
-import torch
 from pathlib import Path
+
+import torch
+import transformer_engine as te
+from megatron.model.gpt_model import GPTModel
+
 from dyana import Profiler
 
 
@@ -22,12 +26,10 @@ def verify_cuda_setup():
     print(f"Device: {torch.cuda.get_device_name()}")
     print("===========================")
 
-    # Set default device
     torch.cuda.set_device(0)
 
 
 if __name__ == "__main__":
-    # Initialize profiler first
     profiler = Profiler(gpu=True)
 
     try:
@@ -35,7 +37,6 @@ if __name__ == "__main__":
         verify_cuda_setup()
         profiler.on_stage("cuda_verified")
 
-        # Enable verbose logging and configure environment
         os.environ["TE_VERBOSE"] = "1"
         os.environ["NVTE_FRAMEWORK"] = "pytorch"
         print("Starting Megatron loader with verbose logging...")
@@ -47,7 +48,6 @@ if __name__ == "__main__":
             te.initialize()
             print(f"Initialized Transformer Engine version: {te.__version__}")
 
-        # Now import Megatron dependencies
         from megatron.core import parallel_state
         from megatron.core.transformer.transformer_config import TransformerConfig
         from transformers import LlamaTokenizer
@@ -62,20 +62,18 @@ if __name__ == "__main__":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         try:
-            # Print Megatron environment info
-            print(f"Transformer Engine version: {transformer_engine.__version__}")
+            print(f"Transformer Engine version: {te.__version__}")
             print(f"CUDA devices: {torch.cuda.device_count()}")
             print(f"CUDA version: {torch.version.cuda}")
             profiler.track(
                 "env_info",
                 {
-                    "te_version": transformer_engine.__version__,
+                    "te_version": te.__version__,
                     "cuda_devices": torch.cuda.device_count(),
                     "cuda_version": torch.version.cuda,
                 },
             )
 
-            # Verify files exist
             model_path = Path(args.model)
             tokenizer_path = Path(args.tokenizer)
             if not model_path.exists():
@@ -97,7 +95,6 @@ if __name__ == "__main__":
                 "13B": {"num_layers": 40, "hidden_size": 5120, "num_attention_heads": 40},
             }[args.size]
 
-            # Create Megatron transformer config
             config = TransformerConfig(
                 num_layers=model_config["num_layers"],
                 hidden_size=model_config["hidden_size"],
@@ -112,11 +109,9 @@ if __name__ == "__main__":
             profiler.on_stage("config_created")
 
             try:
-                # Load tokenizer
                 tokenizer = LlamaTokenizer.from_pretrained(str(tokenizer_path.parent), local_files_only=True)
                 profiler.on_stage("tokenizer_loaded")
 
-                # Initialize Megatron model
                 model = GPTModel(
                     config=config,
                     vocab_size=tokenizer.vocab_size,
@@ -126,17 +121,14 @@ if __name__ == "__main__":
                 )
                 profiler.on_stage("model_created")
 
-                # Load DMC checkpoint
                 checkpoint = torch.load(str(model_path), map_location=device)
                 model.load_state_dict(checkpoint)
                 model.cuda()
                 model.eval()
                 profiler.on_stage("model_loaded")
 
-                # Run inference
                 input_ids = tokenizer(args.input, return_tensors="pt").to(device)
                 with torch.no_grad():
-                    # Megatron expects different input format
                     output = model(input_ids=input_ids["input_ids"])
                     logits = output.logits
                     next_token = torch.argmax(logits[:, -1, :], dim=-1)
@@ -167,7 +159,6 @@ if __name__ == "__main__":
         raise
 
     finally:
-        # Clean up Megatron's parallel state
         try:
             parallel_state.destroy_model_parallel()
         except Exception as e:
