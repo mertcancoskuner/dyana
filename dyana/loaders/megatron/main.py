@@ -1,27 +1,16 @@
-import argparse
-import contextlib
-import logging
 import os
 import sys
+import logging
 import warnings
-from io import StringIO
+import argparse
 from pathlib import Path
+from io import StringIO
+import contextlib
 
-import torch
-import transformer_engine as te
-from megatron.core import parallel_state
-from megatron.core.transformer.transformer_config import TransformerConfig
-from megatron.model.gpt_model import GPTModel
-from transformers import LlamaTokenizer
-
-from dyana.profiler import Profiler  # Update this import path based on your project structure
-
-# Configure logging and warnings
 logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ["PYTHONWARNINGS"] = "ignore"
 
-# Configure environment variables
 os.environ.update(
     {
         "CUDA_LAUNCH_BLOCKING": "1",
@@ -35,7 +24,8 @@ os.environ.update(
     }
 )
 
-# Configure PyTorch
+import torch
+
 torch._C._jit_set_nvfuser_enabled(False)
 torch._C._jit_set_texpr_fuser_enabled(False)
 torch._C._jit_override_can_fuse_on_cpu(False)
@@ -45,11 +35,13 @@ if __name__ == "__main__":
     captured_output = StringIO()
     with contextlib.redirect_stdout(captured_output), contextlib.redirect_stderr(captured_output):
         try:
+            from dyana import Profiler
+
             profiler = Profiler(gpu=True)
 
             # Initialize CUDA
             if torch.cuda.is_available():
-                torch.cuda.init()  # type: ignore
+                torch.cuda.init()
                 torch.cuda.set_device(0)
                 torch.backends.cuda.matmul.allow_tf32 = True
                 torch.backends.cudnn.allow_tf32 = True
@@ -78,6 +70,10 @@ if __name__ == "__main__":
                 raise FileNotFoundError(f"Tokenizer not found at {tokenizer_path}")
             profiler.on_stage("args_verified")
 
+            from transformers import LlamaTokenizer
+            from megatron.core import parallel_state
+            from megatron.core.transformer.transformer_config import TransformerConfig
+
             # Initialize profiler first
             initialized_parallel = False
 
@@ -97,6 +93,8 @@ if __name__ == "__main__":
                     profiler.on_stage("cuda_verified")
 
                 if torch.cuda.is_available():
+                    import transformer_engine.pytorch as te
+
                     try:
                         te.initialize()
                         print(f"Initialized Transformer Engine version: {te.__version__}")
@@ -106,13 +104,13 @@ if __name__ == "__main__":
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
                 try:
-                    print(f"Transformer Engine version: {te.__version__}")
+                    print(f"Transformer Engine version: {transformer_engine.__version__}")
                     print(f"CUDA devices: {torch.cuda.device_count()}")
                     print(f"CUDA version: {torch.version.cuda}")
                     profiler.track(
                         "env_info",
                         {
-                            "te_version": te.__version__,
+                            "te_version": transformer_engine.__version__,
                             "cuda_devices": torch.cuda.device_count(),
                             "cuda_version": torch.version.cuda,
                         },
