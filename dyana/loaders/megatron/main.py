@@ -5,11 +5,10 @@ from pathlib import Path
 import torch
 import transformer_engine as te
 from megatron.model.gpt_model import GPTModel
+from dyana.profiler import Profiler
 
-from dyana import Profiler
 
-
-def verify_cuda_setup():
+def verify_cuda_setup() -> None:
     """Verify CUDA and PyTorch setup before model loading"""
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available")
