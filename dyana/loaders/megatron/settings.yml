@@ -26,8 +26,4 @@ args:
 
 examples:
   - description: "Load a Megatron-DMC model with tokenizer:"
-<<<<<<< Updated upstream
     command: dyana trace --loader megatron --model /path/to/model --tokenizer /path/to/tokenizer.model --size 7B
-=======
-    command: dyana trace --loader megatron --model /path/to/model --tokenizer /path/to/tokenizer.model --size 7B --verbose
->>>>>>> Stashed changes

@@ -6,28 +6,6 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
-<<<<<<< Updated upstream
-    && rm -rf /var/lib/apt/lists/*
-
-# Clone Megatron-LM dmc branch and install
-RUN git clone -b dmc https://github.com/NVIDIA/Megatron-LM.git && \
-    cd Megatron-LM && \
-    pip install -e .
-
-# Copy loader files
-COPY . .
-
-# Install requirements
-RUN pip install --no-cache-dir -r dyana-requirements-gpu.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Environment setup
-ENV CUDA_DEVICE_MAX_CONNECTIONS=1
-ENV PYTHONUNBUFFERED=1
-ENV MEGATRON_DEBUG=1
-
-ENTRYPOINT ["python3", "-u", "main.py"]
-=======
     ca-certificates \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -46,6 +24,7 @@ ENV OMP_NUM_THREADS=1
 ENV NVTE_FRAMEWORK=pytorch
 ENV MAX_JOBS=4
 ENV DEBIAN_FRONTEND=noninteractive
+# Add these new environment variables
 ENV TORCH_CUDNN_V8_API_ENABLED=1
 ENV TORCH_ALLOW_TF32=1
 ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0"
@@ -95,4 +74,3 @@ RUN chown -R root:root /app && \
 
 # Use full path in entrypoint
 ENTRYPOINT ["/app/workspace/entrypoint.sh"]
->>>>>>> Stashed changes
