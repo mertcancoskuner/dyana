@@ -26,18 +26,15 @@ ENV MAX_JOBS=4
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TORCH_CUDNN_V8_API_ENABLED=1
 ENV TORCH_ALLOW_TF32=1
-ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0"
-ENV PYTORCH_JIT=0
-ENV TORCH_INDUCTOR_DISABLE_CUDA_GRAPH=1
-ENV TORCH_INDUCTOR_USE_PYTHON_BINDING=0
-ENV PYTHONFAULTHANDLER=1
-ENV PYTHONUNBUFFERED=1
-ENV NCCL_IB_DISABLE=1
-ENV PYTORCH_NO_CUDA_MEMORY_CACHING=1
 ENV TORCH_SHOW_CPP_STACKTRACES=0
 ENV PYTHONWARNINGS=ignore
+ENV NVIDIA_VISIBLE_DEVICES="all"
+ENV CUDA_DEVICE_ORDER=PCI_BUS_ID
+ENV TORCH_USE_CUDA_DSA=1
+ENV PYTORCH_JIT=0
+ENV TORCH_INDUCTOR_DISABLE_CUDA_GRAPH=0
 
-# Only verify PyTorch during build
+# Only verify PyTorch version during build (not CUDA)
 RUN python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')"
 
 # Create working directory
@@ -65,14 +62,14 @@ RUN mkdir -p /dev/shm && \
     mkdir -p /tmp/pytorch_extensions && \
     chmod -R 777 /dev/shm /tmp/pytorch_extensions
 
-# Create simpler entrypoint script with proper environment
+# Create entrypoint script
 RUN printf '#!/bin/bash\n\
-    # Clear any stale semaphores\nrm -rf /dev/shm/* 2>/dev/null\n\
-    export PYTHONPATH=/app/workspace:/app/Megatron-LM:$PYTHONPATH\n\
-    exec python3 -W ignore main.py "$@"\n' > /app/workspace/entrypoint.sh && \
+    python3 -c "import torch; assert torch.cuda.is_available(), \"CUDA is not available\"; device=torch.cuda.get_device_name(); print(f\"CUDA OK: {device}\")" && \
+    export PYTHONPATH=/app/workspace:/app/Megatron-LM:$PYTHONPATH && \
+    exec python3 -W ignore main.py "$@"' > /app/workspace/entrypoint.sh && \
     chmod +x /app/workspace/entrypoint.sh
 
-# Verify files exist and have correct permissions
+# Verify files exist and perms
 RUN ls -la /app/workspace && \
     ls -la /app/workspace/entrypoint.sh && \
     test -x /app/workspace/entrypoint.sh

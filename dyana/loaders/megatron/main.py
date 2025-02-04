@@ -1,5 +1,3 @@
-# ruff: noqa: I001, E402
-# type: ignore
 import os
 import sys
 import logging
@@ -11,27 +9,15 @@ import contextlib
 
 logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning)
-os.environ["PYTHONWARNINGS"] = "ignore"
 
-os.environ.update(
-    {
-        "CUDA_LAUNCH_BLOCKING": "1",
-        "PYTORCH_NO_CUDA_MEMORY_CACHING": "1",
-        "TORCH_USE_CUDA_DSA": "0",
-        "NVTE_FRAMEWORK": "pytorch",
-        "PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:32",
-        "TORCH_INDUCTOR_DISABLE_CUDA_GRAPH": "1",
-        "TORCH_INDUCTOR_USE_PYTHON_BINDING": "0",
-        "TORCH_SHOW_CPP_STACKTRACES": "0",
-    }
-)
+# Import torch and configure CUDA
+import torch
 
-import torch  # noqa: E402
-
-torch._C._jit_set_nvfuser_enabled(False)
-torch._C._jit_set_texpr_fuser_enabled(False)
-torch._C._jit_override_can_fuse_on_cpu(False)
-torch._C._jit_override_can_fuse_on_gpu(False)
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+if torch.cuda.is_available():
+    torch.cuda.init()
+    torch.cuda.set_device(0)
 
 if __name__ == "__main__":
     captured_output = StringIO()
@@ -41,20 +27,28 @@ if __name__ == "__main__":
 
             profiler = Profiler(gpu=True)
 
-            # Initialize CUDA
-            if torch.cuda.is_available():
-                torch.cuda.init()  # type: ignore[no-untyped-call]
-                torch.cuda.set_device(0)
-                torch.backends.cuda.matmul.allow_tf32 = True
-                torch.backends.cudnn.allow_tf32 = True
-                profiler.track(
-                    "cuda_info",
-                    {
-                        "version": torch.version.cuda,
-                        "device": torch.cuda.get_device_name(),
-                        "device_count": torch.cuda.device_count(),
-                    },
-                )
+            if not torch.cuda.is_available():
+                raise RuntimeError("CUDA is not available but required")
+
+            # Force CUDA initialization
+            torch.cuda.init()
+            torch.cuda.set_device(0)
+            # Allocate a small tensor to ensure CUDA is working
+            test_tensor = torch.zeros(1, device="cuda")
+            del test_tensor
+            torch.cuda.empty_cache()
+
+            device_name = torch.cuda.get_device_name()
+            device_count = torch.cuda.device_count()
+            cuda_version = torch.version.cuda
+            gpu_mem = torch.cuda.get_device_properties(0).total_memory
+            print(
+                f"Found {device_count} CUDA devices, using {device_name} with {gpu_mem / 1e9:.1f}GB memory",
+                file=sys.stderr,
+            )
+            profiler.track(
+                "gpu_info", {"device": device_name, "count": device_count, "cuda": cuda_version, "memory": gpu_mem}
+            )
             profiler.on_stage("cuda_initialized")
 
             parser = argparse.ArgumentParser()
@@ -99,20 +93,20 @@ if __name__ == "__main__":
 
                     try:
                         te.initialize()
-                        print(f"Initialized Transformer Engine version: {te.__version__}")  # noqa: F821
+                        print(f"Initialized Transformer Engine version: {te.__version__}")
                     except Exception as e:
                         print(f"Warning: Transformer Engine initialization failed: {e}")
 
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
                 try:
-                    print(f"Transformer Engine version: {transformer_engine.__version__}")  # noqa: F821
+                    print(f"Transformer Engine version: {transformer_engine.__version__}")
                     print(f"CUDA devices: {torch.cuda.device_count()}")
                     print(f"CUDA version: {torch.version.cuda}")
                     profiler.track(
                         "env_info",
                         {
-                            "te_version": transformer_engine.__version__,  # noqa: F821
+                            "te_version": transformer_engine.__version__,
                             "cuda_devices": torch.cuda.device_count(),
                             "cuda_version": torch.version.cuda,
                         },
@@ -153,20 +147,20 @@ if __name__ == "__main__":
                         tokenizer = LlamaTokenizer.from_pretrained(str(tokenizer_path.parent), local_files_only=True)
                         profiler.on_stage("tokenizer_loaded")
 
-                        model = GPTModel(  # noqa: F821
+                        model = GPTModel(
                             config=config,
                             vocab_size=tokenizer.vocab_size,
                             max_sequence_length=4096,
                             parallel_output=False,
                             share_embeddings_and_output_weights=True,
-                        )
+                        ).cuda()  # GPU
                         profiler.on_stage("model_created")
 
-                        # Load DMC checkpoint
-                        checkpoint = torch.load(str(model_path), map_location=device)
+                        # Load DMC checkpoint directly to GPU
+                        checkpoint = torch.load(str(model_path), map_location="cuda")
                         model.load_state_dict(checkpoint)
-                        model.cuda()
                         model.eval()
+                        torch.cuda.synchronize()  # Ensure model is loaded to GPU
                         profiler.on_stage("model_loaded")
 
                         # Run inference
