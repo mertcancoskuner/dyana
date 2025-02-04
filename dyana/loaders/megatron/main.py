@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 import transformer_engine as te
 from megatron.model.gpt_model import GPTModel
+
 from dyana.profiler import Profiler
 
 
