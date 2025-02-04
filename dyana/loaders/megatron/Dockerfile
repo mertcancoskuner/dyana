@@ -17,7 +17,7 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 ENV CUDA_LAUNCH_BLOCKING=1
 ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:32
 ENV CUDA_MODULE_LOADING=LAZY
-ENV TORCH_USE_CUDA_DSA=1
+ENV TORCH_USE_CUDA_DSA=0
 ENV CUDA_DEVICE_MAX_CONNECTIONS=1
 ENV NCCL_ASYNC_ERROR_HANDLING=1
 ENV OMP_NUM_THREADS=1
@@ -28,8 +28,14 @@ ENV TORCH_CUDNN_V8_API_ENABLED=1
 ENV TORCH_ALLOW_TF32=1
 ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0"
 ENV PYTORCH_JIT=0
-ENV TORCH_COMPILE_DEBUG=1
-ENV TORCH_INDUCTOR_VAR_NAMES=1
+ENV TORCH_INDUCTOR_DISABLE_CUDA_GRAPH=1
+ENV TORCH_INDUCTOR_USE_PYTHON_BINDING=0
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONUNBUFFERED=1
+ENV NCCL_IB_DISABLE=1
+ENV PYTORCH_NO_CUDA_MEMORY_CACHING=1
+ENV TORCH_SHOW_CPP_STACKTRACES=0
+ENV PYTHONWARNINGS=ignore
 
 # Only verify PyTorch during build
 RUN python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')"
@@ -54,10 +60,15 @@ RUN git clone --depth 1 --branch dmc https://github.com/NVIDIA/Megatron-LM.git /
 
 ENV PYTHONPATH=/app/Megatron-LM:$PYTHONPATH
 
-# Create simpler entrypoint script
+# Create directories for IPC
+RUN mkdir -p /dev/shm && \
+    mkdir -p /tmp/pytorch_extensions && \
+    chmod -R 777 /dev/shm /tmp/pytorch_extensions
+
+# Create simpler entrypoint script with proper environment
 RUN printf '#!/bin/bash\n\
+    # Clear any stale semaphores\nrm -rf /dev/shm/* 2>/dev/null\n\
     export PYTHONPATH=/app/workspace:/app/Megatron-LM:$PYTHONPATH\n\
-    export PYTORCH_NO_CUDA_MEMORY_CACHING=1\n\
     exec python3 -W ignore main.py "$@"\n' > /app/workspace/entrypoint.sh && \
     chmod +x /app/workspace/entrypoint.sh
 
@@ -71,5 +82,6 @@ RUN chown -R root:root /app && \
     chmod -R 755 /app && \
     chmod +x /app/workspace/entrypoint.sh
 
-# Use full path in entrypoint
-ENTRYPOINT ["/app/workspace/entrypoint.sh"]
+# Use bash as entrypoint shell
+SHELL ["/bin/bash", "-c"]
+ENTRYPOINT ["/bin/bash", "-c", "exec /app/workspace/entrypoint.sh \"$@\""]
