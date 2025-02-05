@@ -21,14 +21,6 @@
     </a>
 </h4>
 
-<p align="center">
-    <strong>
-        <a href="https://docs.dreadnode.io/dyana/" target="_blank">
-            Documentation
-        </a>
-    </strong>
-</p>
-
 </br>
 
 # Dyana
