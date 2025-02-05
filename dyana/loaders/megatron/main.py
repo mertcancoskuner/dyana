@@ -85,20 +85,12 @@ if __name__ == "__main__":
             # Initialize CUDA
             os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
             os.environ["TORCH_USE_CUDA_DSA"] = "0"
-            os.environ["PYTORCH_JIT"] = "0"  # Disable JIT at env level
             os.environ["TORCH_USE_RTLD_GLOBAL"] = "1"
             os.environ["TORCH_INDUCTOR_DISABLE_CUDA_GRAPH"] = "1"  # Disable CUDA graphs
 
             if not os.path.exists("/dev/shm"):
                 print("Warning: /dev/shm not found, creating...", file=sys.stderr)
                 os.makedirs("/dev/shm", exist_ok=True)
-
-            # PyTorch before other imports
-            print("=== Configuring PyTorch ===", file=sys.stderr)
-            # Disable JIT compilation using available methods
-            if hasattr(torch._C, "_jit_set_profiling_mode"):
-                torch._C._jit_set_profiling_mode(False)
-                print("✓ Disabled JIT profiling mode", file=sys.stderr)
 
             profiler = Profiler(gpu=True)
 
