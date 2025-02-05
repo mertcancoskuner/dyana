@@ -1,4 +1,4 @@
-# ruff: noqa: I001, E402, F401, F821
+# ruff: noqa: I001, F401, E402, B904, F821
 # type: ignore
 import os
 import sys
@@ -13,19 +13,92 @@ logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # Import torch and configure CUDA
-import torch  # noqa: E402
+import torch
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 if torch.cuda.is_available():
-    torch.cuda.init()  # type: ignore[no-untyped-call]
+    torch.cuda.init()
     torch.cuda.set_device(0)
 
+
+def find_tokenizer(model_path: Path) -> Path:
+    """Find tokenizer file in model directory or alongside model file."""
+    patterns = [
+        # LLaMA specific patterns first
+        "llama*tokenizer*.model",  # LLaMA specific naming
+        "tokenizer.model",  # Standard LLaMA tokenizer
+        # Generic patterns as fallback
+        "*.model",  # sentencepiece models
+        "tokenizer.*",  # huggingface style
+        "*/tokenizer.*",  # nested folder
+        "vocab.*",  # vocabulary files
+        "merges.txt",  # BPE merges
+    ]
+
+    # Try both the model's directory and its parent directory
+    search_dirs = [model_path.parent]
+    if model_path.parent.parent.exists():
+        search_dirs.append(model_path.parent.parent)
+
+    print("\n=== Tokenizer Search ===", file=sys.stderr)
+
+    for directory in search_dirs:
+        print(f"Looking in: {directory}", file=sys.stderr)
+        print("Directory contents:", file=sys.stderr)
+        all_files = list(directory.glob("*"))
+        for f in sorted(all_files):
+            print(f"  {f}", file=sys.stderr)
+            # If it looks like a LLaMA tokenizer file, try it first
+            if "tokenizer" in f.name.lower() and f.name.endswith(".model"):
+                print(f"Found likely LLaMA tokenizer: {f}", file=sys.stderr)
+                return f
+
+        # If no obvious tokenizer found, try the patterns
+        print("\nTrying patterns:", file=sys.stderr)
+        for pattern in patterns:
+            print(f"  {pattern}...", file=sys.stderr, end=" ")
+            matches = list(directory.glob(pattern))
+            if matches:
+                print(f"Found: {matches[0]}", file=sys.stderr)
+                return matches[0]
+            print("No match", file=sys.stderr)
+
+    raise FileNotFoundError(
+        f"No tokenizer found in {[str(d) for d in search_dirs]} after trying patterns: {patterns}\n"
+        f"Available files in {model_path.parent}: {[f.name for f in model_path.parent.glob('*')]}"
+    )
+
+
 if __name__ == "__main__":
+    # Set multiprocessing start method
+    import multiprocessing
+
+    multiprocessing.set_start_method("spawn", force=True)
+
     captured_output = StringIO()
     with contextlib.redirect_stdout(captured_output), contextlib.redirect_stderr(captured_output):
         try:
+            print("=== Starting Megatron Loader ===", file=sys.stderr)
             from dyana import Profiler
+
+            # Initialize CUDA
+            os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+            os.environ["TORCH_USE_CUDA_DSA"] = "0"
+            os.environ["PYTORCH_JIT"] = "0"  # Disable JIT at env level
+            os.environ["TORCH_USE_RTLD_GLOBAL"] = "1"
+            os.environ["TORCH_INDUCTOR_DISABLE_CUDA_GRAPH"] = "1"  # Disable CUDA graphs
+
+            if not os.path.exists("/dev/shm"):
+                print("Warning: /dev/shm not found, creating...", file=sys.stderr)
+                os.makedirs("/dev/shm", exist_ok=True)
+
+            # PyTorch before other imports
+            print("=== Configuring PyTorch ===", file=sys.stderr)
+            # Disable JIT compilation using available methods
+            if hasattr(torch._C, "_jit_set_profiling_mode"):
+                torch._C._jit_set_profiling_mode(False)
+                print("✓ Disabled JIT profiling mode", file=sys.stderr)
 
             profiler = Profiler(gpu=True)
 
@@ -33,13 +106,14 @@ if __name__ == "__main__":
                 raise RuntimeError("CUDA is not available but required")
 
             # Force CUDA initialization
-            torch.cuda.init()  # type: ignore[no-untyped-call]
+            torch.cuda.init()
             torch.cuda.set_device(0)
             # Allocate a small tensor to ensure CUDA is working
             test_tensor = torch.zeros(1, device="cuda")
             del test_tensor
             torch.cuda.empty_cache()
 
+            # GPU info
             device_name = torch.cuda.get_device_name()
             device_count = torch.cuda.device_count()
             cuda_version = torch.version.cuda
@@ -53,24 +127,71 @@ if __name__ == "__main__":
             )
             profiler.on_stage("cuda_initialized")
 
+            print("\n=== Importing Dependencies ===", file=sys.stderr)
+            try:
+                from transformers import LlamaTokenizer
+
+                print("✓ Imported LlamaTokenizer", file=sys.stderr)
+                from megatron.core import parallel_state
+
+                print("✓ Imported parallel_state", file=sys.stderr)
+                from megatron.core.transformer.transformer_config import TransformerConfig
+
+                print("✓ Imported TransformerConfig", file=sys.stderr)
+            except Exception as e:
+                print(f"Failed to import dependencies: {e}", file=sys.stderr)
+                profiler.track_error("imports", str(e))
+                raise
+
+            print("\n=== Parsing Arguments ===", file=sys.stderr)
             parser = argparse.ArgumentParser()
             parser.add_argument("--model", required=True)
-            parser.add_argument("--tokenizer", required=True)
             parser.add_argument("--size", choices=["7B", "13B"], required=True)
             parser.add_argument("--input", default="This is an example prompt.")
+            parser.add_argument("--tokenizer", help="Optional explicit tokenizer path")
             args = parser.parse_args()
 
             model_path = Path(args.model)
-            tokenizer_path = Path(args.tokenizer)
             if not model_path.exists():
                 raise FileNotFoundError(f"Model not found at {model_path}")
-            if not tokenizer_path.exists():
-                raise FileNotFoundError(f"Tokenizer not found at {tokenizer_path}")
-            profiler.on_stage("args_verified")
 
-            from transformers import LlamaTokenizer
-            from megatron.core import parallel_state
-            from megatron.core.transformer.transformer_config import TransformerConfig
+            print("\n=== Checking Files ===", file=sys.stderr)
+            print(f"Model path: {model_path}", file=sys.stderr)
+            print("Directory contents:", file=sys.stderr)
+            for f in sorted(model_path.parent.glob("*")):
+                print(f"  {f}", file=sys.stderr)
+
+            # Try explicit tokenizer path
+            if args.tokenizer:
+                tokenizer_path = Path(args.tokenizer)
+                if not tokenizer_path.exists():
+                    raise FileNotFoundError(f"Tokenizer not found at {tokenizer_path}")
+                print(f"Using provided tokenizer: {tokenizer_path}", file=sys.stderr)
+            else:
+                # Otherwise search for tokenizer
+                tokenizer_path = find_tokenizer(model_path)
+                print(f"Found tokenizer: {tokenizer_path}", file=sys.stderr)
+
+            try:
+                print("\n=== Loading Tokenizer ===", file=sys.stderr)
+                print(f"Loading from: {tokenizer_path}", file=sys.stderr)
+
+                try:
+                    tokenizer = LlamaTokenizer.from_pretrained(
+                        str(tokenizer_path.parent),
+                        local_files_only=True,
+                        tokenizer_file=str(tokenizer_path.name),
+                    )
+                    print(f"Successfully loaded tokenizer (vocab_size={tokenizer.vocab_size})", file=sys.stderr)
+                except Exception as e:
+                    print(f"Failed to load tokenizer from {tokenizer_path}: {e}", file=sys.stderr)
+                    raise
+                print("=======================\n", file=sys.stderr)
+                profiler.on_stage("tokenizer_loaded")
+            except Exception as e:
+                print(f"Error loading tokenizer: {e}", file=sys.stderr)
+                profiler.track_error("tokenizer", str(e))
+                raise
 
             # Initialize profiler first
             initialized_parallel = False
@@ -95,20 +216,20 @@ if __name__ == "__main__":
 
                     try:
                         te.initialize()
-                        print(f"Initialized Transformer Engine version: {te.__version__}")  # noqa: F821
+                        print(f"Initialized Transformer Engine version: {te.__version__}")
                     except Exception as e:
                         print(f"Warning: Transformer Engine initialization failed: {e}")
 
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
                 try:
-                    print(f"Transformer Engine version: {transformer_engine.__version__}")  # noqa: F821
+                    print(f"Transformer Engine version: {te.__version__}")  # noqa: F821
                     print(f"CUDA devices: {torch.cuda.device_count()}")
                     print(f"CUDA version: {torch.version.cuda}")
                     profiler.track(
                         "env_info",
                         {
-                            "te_version": transformer_engine.__version__,  # noqa: F821
+                            "te_version": te.__version__,  # noqa: F821
                             "cuda_devices": torch.cuda.device_count(),
                             "cuda_version": torch.version.cuda,
                         },
@@ -146,7 +267,12 @@ if __name__ == "__main__":
                     profiler.on_stage("config_created")
 
                     try:
+                        # Load tokenizer
+                        print("\n=== Loading Tokenizer ===", file=sys.stderr)
+                        print(f"Loading from: {tokenizer_path}", file=sys.stderr)
                         tokenizer = LlamaTokenizer.from_pretrained(str(tokenizer_path.parent), local_files_only=True)
+                        print(f"Loaded tokenizer with vocab size: {tokenizer.vocab_size}", file=sys.stderr)
+                        print("=======================\n", file=sys.stderr)
                         profiler.on_stage("tokenizer_loaded")
 
                         model = GPTModel(  # noqa: F821
@@ -155,7 +281,7 @@ if __name__ == "__main__":
                             max_sequence_length=4096,
                             parallel_output=False,
                             share_embeddings_and_output_weights=True,
-                        ).cuda()  # GPU
+                        ).cuda()  # Explicit GPU
                         profiler.on_stage("model_created")
 
                         # Load DMC checkpoint directly to GPU
@@ -198,7 +324,6 @@ if __name__ == "__main__":
                 raise
 
             finally:
-                # Clean up Megatron's parallel state only if it was initialized
                 try:
                     if initialized_parallel:
                         parallel_state.destroy_model_parallel()

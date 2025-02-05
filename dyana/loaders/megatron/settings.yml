@@ -5,12 +5,7 @@ build_args:
 
 args:
   - name: model
-    description: Path to Megatron model checkpoint
-    required: true
-    volume: true
-
-  - name: tokenizer
-    description: Path to Llama 2 tokenizer model
+    description: Path to model checkpoint (tokenizer should be in same directory)
     required: true
     volume: true
 
@@ -25,5 +20,5 @@ args:
     required: false
 
 examples:
-  - description: "Load a Megatron-DMC model with tokenizer:"
-    command: dyana trace --loader megatron --model /path/to/model --tokenizer /path/to/tokenizer.model --size 7B
+  - description: "Load a Megatron-DMC model:"
+    command: dyana trace --loader megatron --model /path/to/model.pt --size 7B

@@ -10,29 +10,19 @@ RUN apt-get update && \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure environment
-ENV CUDA_HOME=/usr/local/cuda
-ENV PATH=/usr/local/cuda/bin:$PATH
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-ENV CUDA_LAUNCH_BLOCKING=1
-ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:32
-ENV CUDA_MODULE_LOADING=LAZY
-ENV TORCH_USE_CUDA_DSA=0
-ENV CUDA_DEVICE_MAX_CONNECTIONS=1
-ENV NCCL_ASYNC_ERROR_HANDLING=1
-ENV OMP_NUM_THREADS=1
-ENV NVTE_FRAMEWORK=pytorch
-ENV MAX_JOBS=4
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TORCH_CUDNN_V8_API_ENABLED=1
-ENV TORCH_ALLOW_TF32=1
-ENV TORCH_SHOW_CPP_STACKTRACES=0
-ENV PYTHONWARNINGS=ignore
-ENV NVIDIA_VISIBLE_DEVICES="all"
-ENV CUDA_DEVICE_ORDER=PCI_BUS_ID
-ENV TORCH_USE_CUDA_DSA=1
-ENV PYTORCH_JIT=0
-ENV TORCH_INDUCTOR_DISABLE_CUDA_GRAPH=0
+# Create required directories for multiprocessing
+RUN mkdir -p /dev/shm && \
+    mkdir -p /tmp/pytorch_extensions && \
+    mkdir -p /run/shm && \
+    chmod -R 777 /dev/shm /tmp/pytorch_extensions /run/shm
+
+# Create ALL required directories for IPC and shared memory
+RUN mkdir -p /dev/shm && \
+    mkdir -p /run/shm && \
+    mkdir -p /tmp/pytorch_extensions && \
+    mkdir -p /tmp/.pytorch_jit_cache && \
+    mkdir -p /tmp/transformers && \
+    chmod -R 777 /dev/shm /run/shm /tmp/pytorch_extensions /tmp/.pytorch_jit_cache /tmp/transformers
 
 # Only verify PyTorch version during build (not CUDA)
 RUN python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')"
