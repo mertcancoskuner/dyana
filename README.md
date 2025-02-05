@@ -1,13 +1,3 @@
-<p align="center">
-    <img
-    src="https://d1lppblt9t2x15.cloudfront.net/logos/5714928f3cdc09503751580cffbe8d02.png"
-    alt="Logo"
-    align="center"
-    width="144px"
-    height="144px"
-    />
-</p>
-
 # Dyana
 
 <h4 align="center">
