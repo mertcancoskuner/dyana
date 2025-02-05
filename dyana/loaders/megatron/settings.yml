@@ -19,6 +19,13 @@ args:
     default: "This is an example prompt."
     required: false
 
+  - name: tokenizer
+    description: Optional explicit path to tokenizer file (otherwise auto-detected)
+    required: false
+    volume: true
+
 examples:
-  - description: "Load a Megatron-DMC model:"
+  - description: "Load a Megatron-DMC model with auto-detected tokenizer:"
     command: dyana trace --loader megatron --model /path/to/model.pt --size 7B
+  - description: "Load model with explicit tokenizer path:"
+    command: dyana trace --loader megatron --model /path/to/model.pt --size 7B --tokenizer /path/to/tokenizer.model
