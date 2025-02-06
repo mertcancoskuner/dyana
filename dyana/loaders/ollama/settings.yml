@@ -1,5 +1,7 @@
 description: Loads and profiles models via an Ollama server. Local models on the host machine are mounted and shared with the container.
 
+gpu: true
+
 volumes:
   # on macOS
   - host: ~/.ollama/models

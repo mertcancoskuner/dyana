@@ -220,7 +220,7 @@ class Loader:
                 volumes,
                 environment=environment,
                 allow_network=allow_network,
-                allow_gpus=allow_gpus,
+                allow_gpus=allow_gpus and self.settings.gpu,
                 allow_volume_write=allow_volume_write,
             )
             self.container_id = self.container.id

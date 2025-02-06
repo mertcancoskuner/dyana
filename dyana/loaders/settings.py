@@ -32,6 +32,7 @@ class LoaderSettings(BaseModel):
     build_args: dict[str, str] | None = None
     args: list[LoaderArgument] | None = None
     network: bool | None = False
+    gpu: bool = False
     volumes: list[Volume] | None = None
     examples: list[Example] | None = None
 

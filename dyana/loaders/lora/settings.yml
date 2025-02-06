@@ -1,5 +1,7 @@
 description: Loads LoRA adapters via PEFT.
 
+gpu: true
+
 build_args:
   extra-requirements: EXTRA_REQUIREMENTS
 

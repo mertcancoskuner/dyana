@@ -98,8 +98,8 @@ def trace(
 ) -> None:
     try:
         # disable GPU on non-Linux systems
-        if not no_gpu and platform_pkg.system() != "Linux":
-            no_gpu = True
+        # if not no_gpu and platform_pkg.system() != "Linux":
+        #    no_gpu = True
 
         # check if policy is either a file or a directory
         if policy and not policy.exists():
