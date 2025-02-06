@@ -11,8 +11,7 @@ args:
 
   - name: size
     description: Model size (7B or 13B)
-    required: true
-    choices: ["7B", "13B"]
+    required: false
 
   - name: input
     description: Input text for inference

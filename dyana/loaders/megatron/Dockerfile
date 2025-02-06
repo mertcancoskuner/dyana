@@ -45,30 +45,6 @@ RUN git clone --depth 1 --branch dmc https://github.com/NVIDIA/Megatron-LM.git /
     cd /app/Megatron-LM && \
     pip install -e .
 
-ENV PYTHONPATH=/app/Megatron-LM:$PYTHONPATH
+ENV PYTHONPATH=/app/workspac:/app/Megatron-LM:$PYTHONPATH
 
-# Create directories for IPC
-RUN mkdir -p /dev/shm && \
-    mkdir -p /tmp/pytorch_extensions && \
-    chmod -R 777 /dev/shm /tmp/pytorch_extensions
-
-# Create entrypoint script
-RUN printf '#!/bin/bash\n\
-    python3 -c "import torch; assert torch.cuda.is_available(), \"CUDA is not available\"; device=torch.cuda.get_device_name(); print(f\"CUDA OK: {device}\")" && \
-    export PYTHONPATH=/app/workspace:/app/Megatron-LM:$PYTHONPATH && \
-    exec python3 -W ignore main.py "$@"' > /app/workspace/entrypoint.sh && \
-    chmod +x /app/workspace/entrypoint.sh
-
-# Verify files exist and perms
-RUN ls -la /app/workspace && \
-    ls -la /app/workspace/entrypoint.sh && \
-    test -x /app/workspace/entrypoint.sh
-
-# Set proper ownership and permissions
-RUN chown -R root:root /app && \
-    chmod -R 755 /app && \
-    chmod +x /app/workspace/entrypoint.sh
-
-# Use bash as entrypoint shell
-SHELL ["/bin/bash", "-c"]
-ENTRYPOINT ["/bin/bash", "-c", "exec /app/workspace/entrypoint.sh \"$@\""]
+ENTRYPOINT ["python3", "-W", "ignore", "main.py"]
