@@ -55,7 +55,10 @@ def loaders(
     table.add_column("Description")
 
     for loader in sorted(loaders, key=lambda x: x.name):
-        table.add_row(loader.name, loader.settings.description if loader.settings else "")
+        table.add_row(
+            loader.name,
+            loader.settings.description if loader.settings else "",
+        )
 
     print(table)
 
@@ -98,8 +101,8 @@ def trace(
 ) -> None:
     try:
         # disable GPU on non-Linux systems
-        # if not no_gpu and platform_pkg.system() != "Linux":
-        #    no_gpu = True
+        if not no_gpu and platform_pkg.system() != "Linux":
+            no_gpu = True
 
         # check if policy is either a file or a directory
         if policy and not policy.exists():
@@ -119,7 +122,12 @@ def trace(
 
         summary(output)
     except Exception as e:
-        print(f":cross_mark: [bold][red]error:[/] [red]{e}[/]")
+        serr = str(e)
+        if "could not select device driver" in serr and "capabilities: [[gpu]]" in serr:
+            print(":cross_mark: [bold][red]error:[/] [red]GPUs are not available on this system, run with --no-gpu.[/]")
+        else:
+            print(f":cross_mark: [bold][red]error:[/] [red]{e}[/]")
+
         if verbose:
             raise
         else:
