@@ -131,7 +131,8 @@ class Tracer:
             # https://github.com/docker/docker-py/issues/2913
             for char in logs:
                 try:
-                    char = char.decode("utf-8")
+                    if not isinstance(char, str):
+                        char = char.decode("utf-8")
                 except UnicodeDecodeError:
                     char = char.decode("utf-8", errors="replace")
 
