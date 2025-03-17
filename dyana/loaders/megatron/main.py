@@ -24,13 +24,20 @@ from transformers import LlamaTokenizer
 # Local imports
 from dyana import Profiler  # type: ignore[attr-defined]
 
+
+def safe_cuda_init() -> None:
+    """Initialize CUDA with proper type annotations."""
+    if hasattr(torch.cuda, "init"):
+        torch.cuda.init()  # type: ignore[no-untyped-call]
+
+
 logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 if torch.cuda.is_available():
-    torch.cuda.init()  # type: ignore[no-untyped-call]
+    safe_cuda_init()
     torch.cuda.set_device(0)
 
 
@@ -127,7 +134,7 @@ if __name__ == "__main__":
 
         if has_gpu:
             # Force CUDA initialization
-            torch.cuda.init()  # type: ignore[no-untyped-call]
+            safe_cuda_init()
             torch.cuda.set_device(0)
             # Allocate a small tensor to ensure CUDA is working
             test_tensor = torch.zeros(1, device="cuda")
