@@ -28,7 +28,7 @@ from dyana import Profiler  # type: ignore[attr-defined]
 def safe_cuda_init() -> None:
     """Initialize CUDA with proper type annotations."""
     if hasattr(torch.cuda, "init"):
-        torch.cuda.init()  # type: ignore[no-untyped-call]
+        torch.cuda.init()
 
 
 logging.basicConfig(level=logging.ERROR)
