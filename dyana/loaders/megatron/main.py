@@ -1,24 +1,39 @@
+# Standard library imports
 import argparse
+import contextlib
 import logging
+import multiprocessing
+import os
 import sys
 import warnings
-import multiprocessing
+from io import StringIO
 from pathlib import Path
+
+# Third-party imports
+import torch
+import torch.multiprocessing as mp
+
+try:
+    from megatron.core import parallel_state
+    from megatron.core.transformer.transformer_config import TransformerConfig
+    from megatron.model import GPTModel
+except ImportError:
+    # For type checking only - these will never run
+    print("Warning: Megatron modules not available, using stubs for type checking", file=sys.stderr)
+
+from transformers import LlamaTokenizer
+
+# Local imports
+from dyana import Profiler  # type: ignore[attr-defined]
 
 logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-import torch
-
-multiprocessing.set_start_method("spawn", force=True)
-
-import transformer_engine.pytorch as te
-from megatron.core import parallel_state
-from megatron.core.transformer.transformer_config import TransformerConfig
-from transformers import LlamaTokenizer
-
-from dyana import Profiler
-
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+if torch.cuda.is_available():
+    torch.cuda.init()  # type: ignore[no-untyped-call]
+    torch.cuda.set_device(0)
 
 def find_tokenizer(model_path: Path) -> Path:
     """Find tokenizer file in model directory or alongside model file."""
@@ -76,19 +91,13 @@ def load_tokenizer(args) -> LlamaTokenizer:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", required=True)
-    parser.add_argument("--size", choices=["7B", "13B"], default="7B")
-    parser.add_argument("--input", default="This is an example prompt.")
-    parser.add_argument("--tokenizer", help="Optional explicit tokenizer path")
-    args = parser.parse_args()
+    # Set multiprocessing start method
+    multiprocessing.set_start_method("spawn", force=True)
 
-    model_config = {
-        "7B": {"num_layers": 32, "hidden_size": 4096, "num_attention_heads": 32},
-        "13B": {"num_layers": 40, "hidden_size": 5120, "num_attention_heads": 40},
-    }[args.size]
-
-    profiler = Profiler(gpu=True)
+    captured_output = StringIO()
+    with contextlib.redirect_stdout(captured_output), contextlib.redirect_stderr(captured_output):
+        try:
+            print("=== Starting Megatron Loader ===", file=sys.stderr)
 
     try:
         model_path = Path(args.model)
@@ -103,12 +112,13 @@ if __name__ == "__main__":
         has_gpu = torch.cuda.is_available()
         device = torch.device("cuda" if has_gpu else "cpu")
 
-        # Megatron's tensor parallel
-        parallel_state.initialize_model_parallel(
-            tensor_model_parallel_size=1,  # No tensor parallelism for now
-            pipeline_model_parallel_size=1,  # No pipeline parallelism
-        )
-        profiler.on_stage("megatron_initialized")
+            # Force CUDA initialization
+            torch.cuda.init()  # type: ignore[no-untyped-call]
+            torch.cuda.set_device(0)
+            # Allocate a small tensor to ensure CUDA is working
+            test_tensor = torch.zeros(1, device="cuda")
+            del test_tensor
+            torch.cuda.empty_cache()
 
         # Megatron transformer config
         config = TransformerConfig(
