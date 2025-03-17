@@ -3,7 +3,6 @@ import argparse
 import contextlib
 import logging
 import multiprocessing
-import os
 import sys
 import warnings
 from io import StringIO
@@ -11,10 +10,9 @@ from pathlib import Path
 
 # Third-party imports
 import torch
-import torch.multiprocessing as mp
+from te.utils import te
 
 try:
-    from megatron.core import parallel_state
     from megatron.core.transformer.transformer_config import TransformerConfig
     from megatron.model import GPTModel
 except ImportError:
@@ -34,6 +32,7 @@ torch.backends.cudnn.allow_tf32 = True
 if torch.cuda.is_available():
     torch.cuda.init()  # type: ignore[no-untyped-call]
     torch.cuda.set_device(0)
+
 
 def find_tokenizer(model_path: Path) -> Path:
     """Find tokenizer file in model directory or alongside model file."""
@@ -74,7 +73,7 @@ def find_tokenizer(model_path: Path) -> Path:
     )
 
 
-def load_tokenizer(args) -> LlamaTokenizer:
+def load_tokenizer(args: argparse.Namespace) -> LlamaTokenizer:
     if args.tokenizer:
         tokenizer_path = Path(args.tokenizer)
         if not tokenizer_path.exists():
@@ -94,10 +93,21 @@ if __name__ == "__main__":
     # Set multiprocessing start method
     multiprocessing.set_start_method("spawn", force=True)
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, required=True, help="Path to model checkpoint")
+    parser.add_argument("--tokenizer", type=str, help="Path to tokenizer file")
+    parser.add_argument("--input", type=str, default="Hello, world!", help="Input text to process")
+    parser.add_argument("--model-config", type=str, help="Path to model config JSON file")
+    args = parser.parse_args()
+
+    profiler = Profiler(gpu=torch.cuda.is_available())
+
     captured_output = StringIO()
     with contextlib.redirect_stdout(captured_output), contextlib.redirect_stderr(captured_output):
         try:
             print("=== Starting Megatron Loader ===", file=sys.stderr)
+        except Exception as e:
+            print(f"Error during output capture: {e}", file=sys.stderr)
 
     try:
         model_path = Path(args.model)
@@ -107,11 +117,15 @@ if __name__ == "__main__":
         tokenizer = load_tokenizer(args)
         profiler.on_stage("tokenizer_loaded")
 
-        te.initialize()
+        try:
+            te.initialize()
+        except NameError:
+            pass
 
         has_gpu = torch.cuda.is_available()
         device = torch.device("cuda" if has_gpu else "cpu")
 
+        if has_gpu:
             # Force CUDA initialization
             torch.cuda.init()  # type: ignore[no-untyped-call]
             torch.cuda.set_device(0)
@@ -119,6 +133,12 @@ if __name__ == "__main__":
             test_tensor = torch.zeros(1, device="cuda")
             del test_tensor
             torch.cuda.empty_cache()
+
+        model_config = {
+            "num_layers": 32,
+            "hidden_size": 4096,
+            "num_attention_heads": 32,
+        }  # Default values
 
         # Megatron transformer config
         config = TransformerConfig(
@@ -132,7 +152,7 @@ if __name__ == "__main__":
             rotary_pct=0.25,  # LLaMA uses rotary embeddings
         )
 
-        model = GPTModel(  # noqa: F821
+        model = GPTModel(
             config=config,
             vocab_size=tokenizer.vocab_size,
             max_sequence_length=4096,
@@ -163,3 +183,5 @@ if __name__ == "__main__":
 
     except Exception as e:
         profiler.track_error("megatron", str(e))
+
+    profiler.flush()
