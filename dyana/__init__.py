@@ -1,3 +1,3 @@
-import importlib_metadata
+import importlib.metadata
 
-__version__ = importlib_metadata.version("dyana")
+__version__ = importlib.metadata.version("dyana")
