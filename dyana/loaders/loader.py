@@ -46,6 +46,7 @@ class Loader:
         save: list[str] | None = None,
         save_to: pathlib.Path = pathlib.Path("./artifacts"),
         verbose: bool = False,
+        mem_limit: str = "100m",
     ):
         # make sure that name does not include a path traversal
         if "/" in name or ".." in name:
@@ -81,6 +82,7 @@ class Loader:
         self.save: list[str] | None = save
         self.save_to: pathlib.Path = save_to.resolve().absolute()
         self.need_artifacts: bool = False
+        self.mem_limit = mem_limit
 
         if os.path.exists(self.settings_path):
             with open(self.settings_path) as f:
@@ -222,6 +224,7 @@ class Loader:
                 allow_network=allow_network,
                 allow_gpus=allow_gpus and (self.settings.gpu if self.settings else True),
                 allow_volume_write=allow_volume_write,
+                mem_limit=self.mem_limit,
             )
             self.container_id = self.container.id
             self.reader_thread = threading.Thread(target=self._reader_thread)
