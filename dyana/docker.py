@@ -119,6 +119,7 @@ def run_detached(
     allow_network: bool = False,
     allow_gpus: bool = True,
     allow_volume_write: bool = False,
+    mem_limit: str = "100m",
 ) -> docker.models.containers.Container:
     _ensure_docker_client()
 
@@ -137,7 +138,7 @@ def run_detached(
     # enable GPUs
     device_requests = [docker.types.DeviceRequest(device_ids=["all"], capabilities=[["gpu"]])] if allow_gpus else None
 
-    # TODO: implement new command line arguments for limits such as : mem_limit="16g", cpu_quota=400000,
+    # TODO: implement new command line arguments for limits such as : cpu_quota=400000,
     return client.containers.run(
         image,
         command=command,
@@ -161,7 +162,9 @@ def run_detached(
             "seccomp=unconfined",
         ],
         cap_drop=["ALL"],
-        tmpfs={"/tmp": "size=100m,noexec"},
+        tmpfs={"/tmp": f"size={mem_limit},noexec"},
+        # Set overall memory limit for the container
+        mem_limit=mem_limit,
         # https://www.ibm.com/docs/en/wmlce/1.6.2?topic=frameworks-getting-started-pytorch#d15286e680
         pids_limit=16384,
         ulimits=[

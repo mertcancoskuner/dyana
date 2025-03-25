@@ -97,6 +97,7 @@ def trace(
     no_gpu: bool = typer.Option(help="Do not use GPUs.", default=False),
     allow_network: bool = typer.Option(help="Allow network access to the model container.", default=False),
     allow_volume_write: bool = typer.Option(help="Mount volumes as read-write.", default=False),
+    mem_limit: str = typer.Option(help="Memory limit for /tmp directory (e.g. '100m', '1g').", default="100m"),
     verbose: bool = typer.Option(help="Verbose mode.", default=False),
 ) -> None:
     try:
@@ -109,7 +110,14 @@ def trace(
             raise typer.BadParameter(f"policy file or directory not found: {policy}")
 
         the_loader = Loader(
-            name=loader, timeout=timeout, platform=platform, args=ctx.args, verbose=verbose, save=save, save_to=save_to
+            name=loader,
+            timeout=timeout,
+            platform=platform,
+            args=ctx.args,
+            verbose=verbose,
+            save=save,
+            save_to=save_to,
+            mem_limit=mem_limit,
         )
         the_tracer = Tracer(the_loader, policy=policy)
 
