@@ -13,7 +13,12 @@ RUN pip install --no-cache-dir -r dyana-requirements.txt && \
 COPY main.py .
 
 ARG EXTRA_REQUIREMENTS=""
-RUN if [ ! -z "$EXTRA_REQUIREMENTS" ]; then pip install --no-cache-dir $EXTRA_REQUIREMENTS; fi
+RUN if [ ! -z "$EXTRA_REQUIREMENTS" ]; then \
+    for req in $(echo $EXTRA_REQUIREMENTS | tr ',' ' '); do \
+    echo "Installing: $req" && \
+    pip install --no-cache-dir "$req"; \
+    done; \
+    fi
 
 ENTRYPOINT ["python3", "-W", "ignore", "main.py"]
 

@@ -9,13 +9,19 @@ args:
     description: Path to the python pickle file to deserialize.
     required: true
     volume: true
+  - name: extra-requirements
+    description: Extra pip requirements (comma-separated list)
+    required: false
 
 examples:
   - description: "Load a Pickle file:"
     command: dyana trace --loader pickle --pickle /path/to/file.pickle
 
-  - description: "Networking is disabled by default, if you need to allow it, you can pass the --allow-network flag:"
-    command: dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
+  - description: "For pickles with special dependencies:"
+    command: dyana trace --loader pickle --pickle /path/to/model.pkl --extra-requirements "torch"
 
-  - description: "For pickles with special dependencies like torchvision models:"
-    command: dyana trace --loader pickle --pickle /path/to/cifar_resnet.pkl --extra-requirements "torchvision"
+  - description: "For pickles with multiple dependencies:"
+    command: dyana trace --loader pickle --pickle /path/to/model.pkl --extra-requirements "torch,torchvision"
+
+  - description: "Networking is disabled by default, if you need to allow it:"
+    command: dyana trace --loader pickle --pickle /path/to/file.pickle --allow-network
