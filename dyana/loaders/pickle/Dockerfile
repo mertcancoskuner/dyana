@@ -7,8 +7,8 @@ COPY dyana.py .
 COPY dyana-requirements.txt .
 COPY dyana-requirements-gpu.txt .
 
-RUN pip install --no-cache-dir -r dyana-requirements.txt && \
-    pip install --no-cache-dir -r dyana-requirements-gpu.txt
+RUN pip install --no-cache-dir --root-user-action=ignore -r dyana-requirements.txt && \
+    pip install --no-cache-dir --root-user-action=ignore -r dyana-requirements-gpu.txt
 
 COPY main.py .
 
