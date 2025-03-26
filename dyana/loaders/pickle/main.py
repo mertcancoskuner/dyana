@@ -33,7 +33,6 @@ if __name__ == "__main__":
         except Exception as e:
             profiler.track_error("dependencies", f"Failed to install dependencies: {str(e)}")
             print(f"Error installing dependencies: {str(e)}")
-            # Continue execution to see if it works anyway
 
     if not os.path.exists(args.pickle):
         profiler.track_error("pickle", "Pickle file not found")
