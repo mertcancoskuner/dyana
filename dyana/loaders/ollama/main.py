@@ -1,13 +1,15 @@
-from ollama import Client
 import argparse
-import os
-import time
 import json
+import os
 import sys
+import time
 import traceback
+from typing import Any, Dict, Optional, Union
+
+from ollama import Client
 
 
-def ensure_output(data):
+def ensure_output(data: str) -> None:
     """Write to both stdout and stderr to ensure output is captured"""
     print(data)
     print(data, file=sys.stderr)
@@ -21,15 +23,15 @@ try:
     try:
         from dyana import Profiler  # type: ignore[attr-defined]
     except ImportError:
-
-        class Profiler:
-            def __init__(self, gpu=False):
+        # Only define our own Profiler if the import fails
+        class Profiler:  # type: ignore
+            def __init__(self, gpu: bool = False) -> None:
                 self.gpu = gpu
 
-            def on_stage(self, stage):
+            def on_stage(self, stage: str) -> None:
                 pass
 
-            def track_error(self, source, error):
+            def track_error(self, source: str, error: str) -> None:
                 pass
 
     if __name__ == "__main__":
@@ -38,7 +40,12 @@ try:
         parser.add_argument("--input", help="The input sentence", default="This is an example sentence.")
         args = parser.parse_args()
 
-        result = {"status": "started", "model": args.model, "input": args.input, "timestamp": time.time()}
+        result: Dict[str, Any] = {
+            "status": "started",
+            "model": args.model,
+            "input": args.input,
+            "timestamp": time.time(),
+        }
         ensure_output(json.dumps(result))
 
         try:
@@ -129,5 +136,9 @@ try:
 
 except Exception as outer_e:
     # Last resort error handling
-    emergency_data = {"status": "fatal_error", "error": str(outer_e), "traceback": traceback.format_exc()}
+    emergency_data: Dict[str, str] = {
+        "status": "fatal_error",
+        "error": str(outer_e),
+        "traceback": traceback.format_exc(),
+    }
     ensure_output(json.dumps(emergency_data))
