@@ -4,7 +4,7 @@ import os
 import sys
 import time
 import traceback
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from ollama import Client
 
@@ -40,7 +40,7 @@ try:
         parser.add_argument("--input", help="The input sentence", default="This is an example sentence.")
         args = parser.parse_args()
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "status": "started",
             "model": args.model,
             "input": args.input,
@@ -136,7 +136,7 @@ try:
 
 except Exception as outer_e:
     # Last resort error handling
-    emergency_data: Dict[str, str] = {
+    emergency_data: dict[str, str] = {
         "status": "fatal_error",
         "error": str(outer_e),
         "traceback": traceback.format_exc(),
