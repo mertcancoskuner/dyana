@@ -3,12 +3,22 @@ description: Loads and profiles models via an Ollama server. Local models on the
 gpu: true
 
 volumes:
-  # on macOS
+  # on macOS - mount with write permissions
   - host: ~/.ollama/models
     guest: /root/.ollama/models
-  # on Linux
+    options: "rw"
+  # on Linux - mount with write permissions
   - host: /usr/share/ollama/.ollama/models
     guest: /root/.ollama/models
+    options: "rw"
+  # Add a writable directory for Ollama to store manifests
+  - host: ~/.ollama/manifests
+    guest: /root/.ollama/manifests
+    options: "rw"
+  # Add directory for model cache
+  - host: ~/.ollama/cache
+    guest: /root/.ollama/cache
+    options: "rw"
 
 args:
   - name: model
